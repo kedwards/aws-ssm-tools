@@ -35,7 +35,7 @@ for f in "${INSTALL_DIR}/bin/"*; do
 done
 
 echo ""
-echo "[SUCCESS] aws-tools installed!"
+echo "[SUCCESS] aws-ssm-tools installed!"
 echo ""
 echo "Ensure ~/.local/bin is in your PATH:"
 echo ""
