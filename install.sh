@@ -2,18 +2,18 @@
 set -euo pipefail
 
 REPO="kedwards/aws-ssm-tools"
-INSTALL_DIR="${HOME}/.local/aws-tools"
+INSTALL_DIR="${HOME}/.local/aws-ssm-tools"
 BIN_DIR="${HOME}/.local/bin"
 
 # Determine the repo root for downloads
 REPO_URL="https://github.com/${REPO}"
 
-echo "[INFO] Installing aws-tools to ${INSTALL_DIR}"
+echo "[INFO] Installing aws-ssm-tools to ${INSTALL_DIR}"
 mkdir -p "${INSTALL_DIR}"
 mkdir -p "${BIN_DIR}"
 
 # Download latest main branch archive
-echo "[INFO] Downloading aws-tools from GitHub..."
+echo "[INFO] Downloading aws-ssm-tools from GitHub..."
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -42,7 +42,6 @@ echo ""
 echo '  export PATH="$HOME/.local/bin:$PATH"'
 echo ""
 echo "Try the commands:"
-echo "  aws-profile --help"
 echo "  aws-ssm-connect --help"
 echo "  aws-ssm-exec --help"
 echo ""
