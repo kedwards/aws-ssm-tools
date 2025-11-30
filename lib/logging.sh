@@ -20,17 +20,17 @@ _log_should_log() {
 }
 
 log_debug() {
-  _log_should_log DEBUG && echo "[DEBUG] $*" >&2
+  _log_should_log DEBUG && echo "[DEBUG] $*" >&2 || true
 }
 
 log_info() {
-  _log_should_log INFO && echo "[INFO] $*" >&2
+  _log_should_log INFO && echo "[INFO] $*" >&2 || true
 }
 
 log_warn() {
-  _log_should_log WARN && echo "[WARN]  $*" >&2
+  _log_should_log WARN && echo "[WARN]  $*" >&2 || true
 }
 
 log_error() {
-  _log_should_log ERROR && echo "[ERROR] $*" >&2
+  _log_should_log ERROR && echo "[ERROR] $*" >&2 || true
 }

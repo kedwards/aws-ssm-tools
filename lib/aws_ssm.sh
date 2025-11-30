@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# --- Config helper for SSM forwarding (.ssmf.cfg style) ---
-
 aws_ssm_config_get() {
   local file="$1" section="$2" key="$3"
   awk -F ' *= *' -v s="[$section]" -v k="$key" '
@@ -9,6 +7,15 @@ aws_ssm_config_get() {
     found && $1==k {print $2; exit}
     found && /^\[.*\]/ {exit}
   ' "$file"
+}
+
+aws_list_profiles() {
+  if [[ -f "$HOME/.aws/config" ]]; then
+    grep '^\[profile ' "$HOME/.aws/config" |
+      awk '{ print substr($2,1,length($2)-1) }'
+  else
+    log_warn "No ~/.aws/config found"
+  fi
 }
 
 aws_ssm_connect_usage() {
@@ -19,14 +26,14 @@ Usage:
 
 Connect to an instance via AWS SSM. With --config, uses ~/.ssmf.cfg or \$SSMF_CONF:
 
-  [my-db-connection]
+  [db-conn]
   port = 5432
   local_port = 5432
   host = localhost
   url = http://localhost:5432/
-  profile = my-profile
+  profile = db-profile
   region = us-west-2
-  name = my-instance-tagname (optional)
+  name = instance-tagname (optional)
 
 If 'name' is omitted, you will be prompted to choose a running instance.
 EOF
@@ -68,7 +75,7 @@ aws_ssm_connect_main() {
     fi
 
     local connection
-    if ! menu_select_one "Select connection" connection "${connections[@]}"; then
+    if ! menu_select_one "Select connection" "[${AWS_PROFILE:-port-forwarding}]" connection "${connections[@]}"; then
       return 1
     fi
 
@@ -93,7 +100,11 @@ aws_ssm_connect_main() {
     # Switch profile if needed
     if [[ "${AWS_PROFILE:-}" != "$profile" || "${AWS_REGION:-}" != "$region" ]]; then
       log_info "Switching to profile $profile ($region)"
-      aws_profile_switch "$profile" -r "$region"
+      # Source the assume script to set environment variables
+      if ! source assume "$profile" -r "$region"; then
+        log_error "Failed to assume profile $profile"
+        return 1
+      fi
     fi
 
     # Resolve instance
@@ -112,7 +123,7 @@ aws_ssm_connect_main() {
         return 1
       fi
       local chosen
-      if ! menu_select_one "Select instance for port forwarding" chosen "${INSTANCE_LIST[@]}"; then
+      if ! menu_select_one "Select instance for port forwarding" "[${AWS_PROFILE:-port-forwarding}]" chosen "${INSTANCE_LIST[@]}"; then
         return 1
       fi
       instance_name="${chosen% *}"
@@ -146,7 +157,7 @@ aws_ssm_connect_main() {
       return 1
     fi
     local chosen
-    if ! menu_select_one "Select instance to connect to" chosen "${INSTANCE_LIST[@]}"; then
+    if ! menu_select_one "Select instance to connect to" "[${AWS_PROFILE}]" chosen "${INSTANCE_LIST[@]}"; then
       return 1
     fi
     instance_name="${chosen% *}"
@@ -185,21 +196,62 @@ aws_ssm_execute_main() {
   shift
   local instance_ids=("$@")
 
+  # If no profile is set, prompt for profile and region selection
+  if [[ -z "${AWS_PROFILE:-}" ]]; then
+    local profiles
+    profiles=$(aws_list_profiles)
+    local all_profiles
+    mapfile -t all_profiles <<<"$profiles"
+
+    if [[ ${#all_profiles[@]} -eq 0 ]]; then
+      log_error "No AWS profiles found"
+      return 1
+    fi
+
+    local selected_profile=""
+    if ! menu_select_one "Select AWS profile" "" selected_profile "${all_profiles[@]}"; then
+      log_error "Profile selection cancelled"
+      return 1
+    fi
+
+    local regions=("us-east-1" "us-east-2" "us-west-1" "us-west-2" "ca-central-1" "eu-west-1" "eu-central-1" "ap-southeast-1" "ap-southeast-2" "ap-northeast-1")
+    local selected_region=""
+    if ! menu_select_one "Select region for $selected_profile" "" selected_region "${regions[@]}"; then
+      selected_region="us-east-1"
+      log_warn "No region selected, defaulting to us-east-1"
+    fi
+
+    log_info "Switching to profile $selected_profile ($selected_region)"
+    assume "$selected_profile" -r "$selected_region"
+  fi
+
   if [[ ${#instance_ids[@]} -eq 0 ]]; then
     aws_get_all_running_instances ""
     if [[ ${#INSTANCE_LIST[@]} -eq 0 ]]; then
       echo "No running instances found"
       return 1
     fi
-    local selections
+    # selections will be set by menu_select_multi using declare -g
     if ! menu_select_multi "Select instances for SSM command" selections "${INSTANCE_LIST[@]}"; then
       return 1
     fi
-    # extract IDs
-    while IFS= read -r line; do
-      [[ -z "$line" ]] && continue
-      instance_ids+=("${line##* }")
-    done <<<"$selections"
+
+    # Check if selections is empty (menu returned success but nothing selected)
+    if [[ -z "$selections" ]]; then
+      echo "No instances selected"
+      return 1
+    fi
+
+    # Extract IDs using mapfile to avoid subshell/process substitution issues
+    local selected_lines
+    mapfile -t selected_lines <<<"$selections"
+
+    local item
+    for item in "${selected_lines[@]}"; do
+      [[ -z "$item" ]] && continue
+      local extracted_id="${item##* }"
+      instance_ids+=("$extracted_id")
+    done
   fi
 
   if [[ ${#instance_ids[@]} -eq 0 ]]; then
@@ -209,7 +261,7 @@ aws_ssm_execute_main() {
 
   local tmpfile
   tmpfile=$(mktemp /tmp/ssm-script.XXXXXX)
-  trap 'rm -f "$tmpfile"' EXIT
+  trap 'rm -f "${tmpfile:-}"' EXIT
 
   cat >"$tmpfile" <<EOF
 {
@@ -373,8 +425,13 @@ aws_ssm_kill_main() {
     pid_list+=("$pid")
   done
 
-  local selected
+  local selected=""
   if ! menu_select_multi "Select SSM sessions to kill" selected "${session_list[@]}"; then
+    return 0
+  fi
+
+  if [[ -z "$selected" ]]; then
+    echo "No sessions selected"
     return 0
   fi
 
@@ -384,7 +441,13 @@ aws_ssm_kill_main() {
     pid=$(grep -oP 'PID: \K[0-9]+' <<<"$sel" || true)
     if [[ -n "$pid" ]]; then
       echo "Killing SSM session PID: $pid"
+      # Try graceful kill first, then force kill if needed
       if kill "$pid" 2>/dev/null; then
+        sleep 0.5
+        if ps -p "$pid" >/dev/null 2>&1; then
+          echo "  Process still running, forcing kill..."
+          kill -9 "$pid" 2>/dev/null || log_error "Failed to force kill PID $pid"
+        fi
         log_info "Session $pid terminated"
       else
         log_error "Failed to kill PID $pid"

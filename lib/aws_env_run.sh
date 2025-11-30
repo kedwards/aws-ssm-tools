@@ -26,7 +26,8 @@ aws_env_run_main() {
     # interactive selection
     local profiles
     profiles=$(aws_list_profiles)
-    read -ra all_profiles <<<"$profiles"
+    # read ALL lines (profiles) into an array
+    mapfile -t all_profiles <<<"$profiles"
 
     if [[ ${#all_profiles[@]} -eq 0 ]]; then
       log_error "No AWS profiles found"
@@ -35,8 +36,10 @@ aws_env_run_main() {
 
     local selected_profiles
     if ! menu_select_multi "Select profiles" selected_profiles "${all_profiles[@]}"; then
+      log_error "Profile selection cancelled or failed"
       return 1
     fi
+    [[ -z "$selected_profiles" ]] && { log_error "No profiles selected"; return 1; }
 
     local regions=("us-east-1" "us-east-2" "us-west-1" "us-west-2" "ca-central-1" "eu-west-1" "eu-central-1" "ap-southeast-1" "ap-southeast-2" "ap-northeast-1")
     pairs=()
@@ -45,6 +48,7 @@ aws_env_run_main() {
       [[ -z "$prof" ]] && continue
       local sel_regions
       if ! menu_select_multi "Select region(s) for $prof" sel_regions "${regions[@]}"; then
+        log_warn "No regions selected for $prof, defaulting to us-east-1"
         sel_regions="us-east-1"
       fi
       while IFS= read -r r; do
