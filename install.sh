@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="kedwards/aws-tools"
+REPO="kedwards/aws-ssm-tools"
 INSTALL_DIR="${HOME}/.local/aws-tools"
 BIN_DIR="${HOME}/.local/bin"
 
