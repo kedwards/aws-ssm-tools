@@ -21,7 +21,7 @@ echo "[INFO] Downloading latest version..."
 curl -sSL "${REPO_URL}/archive/refs/heads/main.tar.gz" |
   tar xz -C "$tmpdir"
 
-EXTRACTED_DIR="${tmpdir}/aws-tools-main"
+EXTRACTED_DIR="${tmpdir}/aws-ssm-tools-main"
 
 echo "[INFO] Syncing files..."
 rsync -a --delete "${EXTRACTED_DIR}/" "${INSTALL_DIR}/"
