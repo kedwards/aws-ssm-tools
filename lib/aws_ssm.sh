@@ -232,12 +232,18 @@ aws_ssm_execute_main() {
       return 1
     fi
     # selections will be set by menu_select_multi using declare -g
+    # Initialize but do NOT declare as local - declare -g can't modify caller's local vars
+    selections=""
     if ! menu_select_multi "Select instances for SSM command" selections "${INSTANCE_LIST[@]}"; then
+      [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: menu_select_multi returned error" >&2
       return 1
     fi
 
+    [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: selections value: [$selections]" >&2
+    [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: selections length: ${#selections}" >&2
+
     # Check if selections is empty (menu returned success but nothing selected)
-    if [[ -z "$selections" ]]; then
+    if [[ -z "${selections:-}" ]]; then
       echo "No instances selected"
       return 1
     fi
@@ -425,12 +431,14 @@ aws_ssm_kill_main() {
     pid_list+=("$pid")
   done
 
-  local selected=""
+  # selected will be set by menu_select_multi using declare -g
+  # Do NOT declare as local - declare -g can't modify caller's local vars
+  selected=""
   if ! menu_select_multi "Select SSM sessions to kill" selected "${session_list[@]}"; then
     return 0
   fi
 
-  if [[ -z "$selected" ]]; then
+  if [[ -z "${selected:-}" ]]; then
     echo "No sessions selected"
     return 0
   fi
