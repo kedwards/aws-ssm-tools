@@ -55,14 +55,18 @@ menu_select_multi() {
 
   local selections=""
   if command -v fzf >/dev/null 2>&1; then
-    # Make Enter select current item if nothing marked, then accept
-    # {+} gives all selected items, {q} gives the query, {} gives current item
+    # In multi mode, pressing Enter without Tab marking returns nothing
+    # So we bind Enter to: toggle current item + accept
+    [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: About to run fzf with ${#items[@]} items" >&2
     selections=$(printf '%s\n' "${items[@]}" |
       fzf --multi --prompt="${prompt}: " --height=50% --reverse \
         --header="${prompt} (Tab to mark multiple, Enter to confirm)" \
-        --bind 'enter:become(printf "%s\n" {+})')
+        --bind 'enter:toggle+accept')
     local fzf_exit=$?
-    if [[ -z "$selections" ]]; then
+    [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: fzf exit code: $fzf_exit" >&2
+    [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: fzf returned: [$selections]" >&2
+    [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: fzf returned length: ${#selections}" >&2
+    if [[ $fzf_exit -ne 0 ]] || [[ -z "$selections" ]]; then
       log_info "No selection made (fzf cancelled)"
       return 1
     fi
@@ -85,7 +89,9 @@ menu_select_multi() {
     done
   fi
 
-  # Use printf -v to set in caller's scope
-  printf -v "$__result_var" '%s' "$selections"
+  # Use declare -g to set in caller's scope (global)
+  [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: Before declare -g, selections=[$selections]" >&2
+  declare -g "$__result_var=$selections"
+  [[ -n "${DEBUG_AWS_SSM:-}" ]] && echo "DEBUG: After declare -g $__result_var" >&2
   return 0
 }
