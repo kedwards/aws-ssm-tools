@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="kedwards/aws-ssm-tools"
-INSTALL_DIR="${HOME}/.local/aws-ssm-tools"
+INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools"
 BIN_DIR="${HOME}/.local/bin"
 
 # Determine the repo root for downloads

@@ -18,8 +18,10 @@ This toolkit designed with the following in mind:
 ### ✔ SSM Session Management
 - Start shell sessions (`aws-ssm-connect`)  
 - Start port-forwarding sessions from a config file  
-- Execute commands on one or many EC2 instances  
-- List and kill active SSM sessions  
+- Execute commands on one or many EC2 instances (`aws-ssm-exec`)  
+- Create temporary user accounts with sudo access (`aws-ssm-user`)  
+- Remove temporary user accounts (`aws-ssm-user-remove`)  
+- List and kill active SSM sessions
 
 ### ✔ Environment Automation
 Run commands across multiple AWS environments and regions:
@@ -94,6 +96,8 @@ aws-tools/
 ├── bin/
 │   ├── aws-ssm-connect
 │   ├── aws-ssm-exec
+│   ├── aws-ssm-user
+│   ├── aws-ssm-user-remove
 │   ├── aws-ssm-list
 │   ├── aws-ssm-kill
 │   ├── aws-env-run
@@ -152,6 +156,33 @@ aws-ssm-connect --config
 aws-ssm-exec "uptime" i-abc i-def
 aws-ssm-exec "hostname"
 ```
+
+## 👤 Create/Remove temporary user accounts
+
+Create a user account on remote instances with your local username, SSH key access, and passwordless sudo:
+
+```
+aws-ssm-user                      # interactive instance selection
+aws-ssm-user i-0123456789abcdef0  # specific instance
+aws-ssm-user my-server            # by instance name
+```
+
+This creates:
+- User account matching your local username
+- SSH authorized_keys from `~/.ssh/id_rsa.pub`
+- Passwordless sudo via `/etc/sudoers.d/user_temp_access`
+
+Remove the user account and clean up:
+
+```
+aws-ssm-user-remove
+aws-ssm-user-remove i-0123456789abcdef0
+```
+
+This removes:
+- User account and home directory
+- All user processes
+- Sudoers configuration file
 
 ## 🌎 Run commands across environments
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="kedwards/aws-ssm-tools"
-INSTALL_DIR="${HOME}/.local/aws-ssm-tools"
+INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools"
 REPO_URL="https://github.com/${REPO}"
 
 if [[ ! -d "${INSTALL_DIR}" ]]; then
