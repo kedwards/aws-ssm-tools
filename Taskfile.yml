@@ -1,0 +1,34 @@
+---
+version: "3"
+
+vars:
+  BATS: bats
+  SHELLCHECK: shellcheck
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  test:
+    desc: Run unit tests only (No AWS auth)
+    cmds:
+      - "{{.BATS}} test/unit"
+    silent: false
+
+  test:integration:
+    desc: Run integration tests (Requires AWS auth)
+    cmds:
+      - "{{.BATS}} test/integration"
+
+  lint:
+    desc: Run shellcheck
+    cmds:
+      - "{{.SHELLCHECK}} lib/menu/index.sh"
+
+  ci:
+    desc: Run all checks (CI)
+    deps:
+      - lint
+      - test

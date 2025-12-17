@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+# EC2 helpers
+source "$ROOT_DIR/lib/aws/ec2.sh"
+
+# SSM helpers
+source "$ROOT_DIR/lib/aws/ssm.sh"
+
+# Shared AWS helpers (now or later)
+ensure_aws_cli() {
+  command -v aws >/dev/null 2>&1 || {
+    log_error "aws CLI not found"
+    return 1
+  }
+}
+
+aws_sso_validate_or_login() {
+  # stub for now
+  return 0
+}
+
+choose_profile_and_region() {
+  # profile
+  if [[ -z "${PROFILE:-}" ]]; then
+    PROFILE="${AWS_PROFILE:-}"
+  fi
+
+  if [[ -z "$PROFILE" ]]; then
+    PROFILE="$(aws configure get profile 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$PROFILE" ]]; then
+    if [[ "${MENU_NON_INTERACTIVE:-0}" == "1" ]]; then
+      log_error "AWS profile required but not set (non-interactive)"
+      return 1
+    fi
+
+    mapfile -t profiles < <(aws configure list-profiles)
+    (( ${#profiles[@]} == 0 )) && {
+      log_error "No AWS profiles found"
+      return 1
+    }
+
+    menu_select_one "Select AWS profile" "" PROFILE "${profiles[@]}" || return 130
+  fi
+
+  # region
+  if [[ -z "${REGION:-}" ]]; then
+    REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+  fi
+
+  if [[ -z "$REGION" ]]; then
+    REGION="$(aws configure get region --profile "$PROFILE" 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$REGION" ]]; then
+    if [[ "${MENU_NON_INTERACTIVE:-0}" == "1" ]]; then
+      log_error "AWS region required but not set (non-interactive)"
+      return 1
+    fi
+
+    local regions=(
+      us-east-1 us-west-2
+    )
+
+    menu_select_one "Select AWS region" "" REGION "${regions[@]}" || return 130
+  fi
+
+  export AWS_REGION="$REGION"
+  export AWS_DEFAULT_REGION="$REGION"
+  return 0
+}
+
+aws_ec2_select_instance() {
+  local prompt="$1"
+  local target="${2:-}"
+
+  local instance_id instance_name
+
+  # explicit instance id
+  if [[ "$target" == i-* ]]; then
+    printf '%s %s\n' "$target" "$target"
+    return 0
+  fi
+
+  # explicit name
+  if [[ -n "$target" ]]; then
+    instance_id="$(aws_expand_instances "$target" | head -n1 || true)"
+    [[ -z "$instance_id" ]] && {
+      log_error "No running instance found matching: $target"
+      return 1
+    }
+
+    printf '%s %s\n' "$target" "$instance_id"
+    return 0
+  fi
+
+  # interactive selection
+  if [[ "${MENU_NON_INTERACTIVE:-0}" == "1" ]]; then
+    log_error "Instance selection requires interaction"
+    return 1
+  fi
+
+  aws_get_all_running_instances ""
+  (( ${#INSTANCE_LIST[@]} == 0 )) && {
+    log_error "No running EC2 instances found"
+    return 1
+  }
+
+  local chosen
+  menu_select_one "$prompt" "" chosen "${INSTANCE_LIST[@]}" || return 130
+
+  instance_name="${chosen% *}"
+  instance_id="${chosen##* }"
+
+  printf '%s %s\n' "$instance_name" "$instance_id"
+}

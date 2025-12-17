@@ -1,0 +1,73 @@
+#!/usr/bin/env bats
+# shellcheck disable=SC2329,SC2030,SC2031
+
+export MENU_NON_INTERACTIVE=1
+export AWS_EC2_DISABLE_LIVE_CALLS=1
+export AWS_AUTH_DISABLE_ASSUME=1
+
+load '../helpers/bats-support/load'
+load '../helpers/bats-assert/load'
+
+setup() {
+  # enforce non-interactive test mode
+  export MENU_NON_INTERACTIVE=1
+  export MENU_ASSUME_FIRST=1
+
+  # AWS auth stubs
+  aws_auth_assume() { return 0; }
+
+  # logging stubs
+  log_debug(){ :; }
+  log_info(){ :; }
+  log_warn(){ :; }
+  log_error(){ :; }
+
+  # hard fail if menu is called
+  menu_select_one() {
+    echo "ERROR: menu_select_one should not be called in --yes mode" >&2
+    return 99
+  }
+
+  # core stubs
+  ensure_aws_cli(){ :; }
+  aws_sso_validate_or_login(){ :; }
+
+  choose_profile_and_region(){
+    PROFILE=default
+    REGION=us-west-2
+  }
+
+  aws_ssm_start_shell() {
+    echo "SSM_SHELL $1"
+  }
+
+  # load code
+  source ./lib/core/flags.sh
+  source ./lib/aws/ec2.sh
+  source ./lib/commands/ssm_connect.sh
+
+  # instance list stub
+  aws_get_all_running_instances() {
+    [[ -t 0 || "${MENU_NON_INTERACTIVE:-0}" == "0" ]] || {
+      log_error "Non-interactive mode but AWS call attempted"
+      return 1
+    }
+
+    INSTANCE_LIST=(
+      "first-instance i-1111111111"
+      "second-instance i-2222222222"
+    )
+  }
+}
+
+@test "ssm connect --yes auto-selects first instance" {
+  run ssm_connect --yes
+  assert_success
+  assert_output --partial "SSM_SHELL i-1111111111"
+}
+
+@test "ssm connect --yes --dry-run prints deterministic target" {
+  run ssm_connect --yes --dry-run
+  assert_success
+  assert_output --partial "DRY-RUN: aws ssm start-session"
+}

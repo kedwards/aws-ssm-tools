@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Core
+source "$ROOT_DIR/lib/core/logging.sh"
+source "$ROOT_DIR/lib/core/flags.sh"
+source "$ROOT_DIR/lib/core/tty.sh"
+
+# Menu
+source "$ROOT_DIR/lib/menu/index.sh"
+
+# AWS Auth
+source "$ROOT_DIR/lib/core/aws_auth.sh"
+
+# AWS Helpers
+source "$ROOT_DIR/lib/core/aws.sh"
+source "$ROOT_DIR/lib/aws/ec2.sh"
+source "$ROOT_DIR/lib/aws/ssm.sh"
+
+# Commands
+source "$ROOT_DIR/lib/commands/ssm_login.sh"
+source "$ROOT_DIR/lib/commands/ssm_connect.sh"
+
+main() {
+  local cmd="${1:-}"
+  shift || true
+
+  case "$cmd" in
+    login)
+ssm_login "$@"
+      ;;
+    connect)
+      ssm_connect "$@"
+      ;;
+    *)
+      echo "Unknown command: $cmd" >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
