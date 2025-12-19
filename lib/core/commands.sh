@@ -55,3 +55,43 @@ aws_ssm_load_commands() {
   # Return success if any commands were loaded
   (( ${#COMMAND_NAMES[@]} > 0 ))
 }
+
+aws_ssm_select_command() {
+  local __result_var="$1"
+
+  # Load commands
+  if ! aws_ssm_load_commands; then
+    log_warn "No saved commands found"
+    return 1
+  fi
+
+  # Build display list (name: description)
+  local display=()
+  local i
+  for i in "${!COMMAND_NAMES[@]}"; do
+    display+=("${COMMAND_NAMES[$i]}: ${COMMAND_DESCRIPTIONS[$i]}")
+  done
+
+  # Interactive selection
+  local selected
+  if ! menu_select_one "Select saved command" "Saved Commands" selected "${display[@]}"; then
+    return 1
+  fi
+
+  # Extract command name from selection (before the colon)
+  local selected_name="${selected%%:*}"
+
+  # Find and return the command string
+  for i in "${!COMMAND_NAMES[@]}"; do
+    if [[ "${COMMAND_NAMES[$i]}" == "$selected_name" ]]; then
+      local cmd="${COMMAND_STRINGS[$i]}"
+      # Expand variables in command
+      cmd=$(eval "echo \"$cmd\"")
+      printf -v "$__result_var" '%s' "$cmd"
+      return 0
+    fi
+  done
+
+  log_error "Command '$selected_name' not found in list"
+  return 1
+}

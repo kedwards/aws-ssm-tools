@@ -150,3 +150,121 @@ EOF
   [ "${#COMMAND_NAMES[@]}" -eq 1 ]
   [ "${COMMAND_STRINGS[0]}" = "grep ERROR /var/log/app.log | tail -20" ]
 }
+
+# aws_ssm_select_command tests
+
+@test "aws_ssm_select_command returns false when no commands exist" {
+  source ./lib/core/commands.sh
+  
+  run aws_ssm_select_command result
+  [ "$status" -eq 1 ]
+}
+
+@test "aws_ssm_select_command returns selected command" {
+  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
+disk-usage|Check disk usage|df -h
+memory-info|Display memory information|free -h
+EOF
+
+  # Mock menu_select_one to select first item
+  menu_select_one() {
+    local result_var="$3"
+    printf -v "$result_var" '%s' "disk-usage: Check disk usage"
+    return 0
+  }
+  export -f menu_select_one
+
+  source ./lib/core/commands.sh
+  
+  local result
+  aws_ssm_select_command result
+  [ "$result" = "df -h" ]
+}
+
+@test "aws_ssm_select_command expands variables in command" {
+  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
+echo-var|Echo variable|echo \$USER
+EOF
+
+  # Mock menu_select_one
+  menu_select_one() {
+    local result_var="$3"
+    printf -v "$result_var" '%s' "echo-var: Echo variable"
+    return 0
+  }
+  export -f menu_select_one
+
+  export USER="testuser"
+  source ./lib/core/commands.sh
+  
+  local result
+  aws_ssm_select_command result
+  [ "$result" = "echo testuser" ]
+}
+
+@test "aws_ssm_select_command returns error when menu cancelled" {
+  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
+disk-usage|Check disk usage|df -h
+EOF
+
+  # Mock menu_select_one to return error (cancelled)
+  menu_select_one() {
+    return 1
+  }
+  export -f menu_select_one
+
+  source ./lib/core/commands.sh
+  
+  local result
+  run aws_ssm_select_command result
+  [ "$status" -eq 1 ]
+}
+
+@test "aws_ssm_select_command handles command with spaces" {
+  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
+list-files|List all files|ls -la /var/log
+EOF
+
+  # Mock menu_select_one
+  menu_select_one() {
+    local result_var="$3"
+    printf -v "$result_var" '%s' "list-files: List all files"
+    return 0
+  }
+  export -f menu_select_one
+
+  source ./lib/core/commands.sh
+  
+  local result
+  aws_ssm_select_command result
+  [ "$result" = "ls -la /var/log" ]
+}
+
+@test "aws_ssm_select_command displays commands with descriptions" {
+  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
+disk-usage|Check disk usage|df -h
+memory-info|Display memory information|free -h
+EOF
+
+  # Mock menu_select_one to capture display items
+  menu_select_one() {
+    local prompt="$1"
+    local result_var="$3"
+    shift 3
+    local items=("$@")
+    
+    # Verify format is "name: description"
+    [ "${items[0]}" = "disk-usage: Check disk usage" ]
+    [ "${items[1]}" = "memory-info: Display memory information" ]
+    
+    printf -v "$result_var" '%s' "${items[0]}"
+    return 0
+  }
+  export -f menu_select_one
+
+  source ./lib/core/commands.sh
+  
+  local result
+  aws_ssm_select_command result
+  [ "$result" = "df -h" ]
+}
