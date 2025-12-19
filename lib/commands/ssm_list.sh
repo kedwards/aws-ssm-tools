@@ -32,12 +32,18 @@ ssm_list() {
     # Extract PID (2nd field in ps aux output)
     pid=$(awk '{print $2}' <<<"$line")
     
-    # Extract target instance ID - try --target flag first
-    target=$(grep -oP '\-\-target \K[^ ]+' <<<"$line" || true)
+    # Extract target instance ID from the JSON parameter
+    # Format: {"Target": "i-xxxxx"}
+    target=$(grep -oP '"Target"\s*:\s*"\K[^"]+' <<<"$line" || true)
     
-    # If no --target flag, try to extract from JSON
+    # Fallback: try --target flag format
     if [[ -z "$target" ]]; then
-      target=$(sed -n 's/.*TargetId":"\([^"]*\)".*/\1/p' <<<"$line" | head -n1)
+      target=$(grep -oP '\-\-target \K[^ ]+' <<<"$line" || true)
+    fi
+    
+    # Fallback: try TargetId in JSON
+    if [[ -z "$target" ]]; then
+      target=$(grep -oP '"TargetId"\s*:\s*"\K[^"]+' <<<"$line" || true)
     fi
     
     # Determine session type
@@ -60,10 +66,16 @@ ssm_list() {
     
     # Try to resolve instance name from EC2 (optional, may fail if wrong profile)
     instance_name=""
-    if [[ -n "$target" ]]; then
+    if [[ -n "$target" && "$target" =~ ^i- ]]; then
+      # Only try to resolve if target looks like an instance ID
       instance_name=$(aws ec2 describe-instances --instance-ids "$target" \
-        --query "Reservations[0].Instances[0].Tags[?Key=='Name'].Value" \
+        --query "Reservations[0].Instances[0].Tags[?Key=='Name'].Value | [0]" \
         --output text 2>/dev/null || echo "")
+      
+      # Filter out "None" responses
+      if [[ "$instance_name" == "None" || -z "$instance_name" ]]; then
+        instance_name=""
+      fi
     fi
     
     # Display session info
@@ -75,5 +87,12 @@ ssm_list() {
   done
   
   echo ""
-  echo "Tip: Switch to the correct AWS profile to see instance names"
+  
+  # Show helpful tip about authentication
+  if [[ "$current_profile" == "none" ]]; then
+    echo "Note: No AWS profile set. To see instance names, authenticate first:"
+    echo "      assume <profile> -r <region>"
+  else
+    echo "Tip: If instance names don't appear, verify you're using the correct profile"
+  fi
 }
