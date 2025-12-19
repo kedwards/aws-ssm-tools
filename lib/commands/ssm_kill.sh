@@ -70,7 +70,7 @@ ssm_kill() {
 
   # Interactive multi-select
   local selected
-  if ! menu_select_many "Select SSM sessions to kill" selected "${session_list[@]}"; then
+  if ! menu_select_many "Select SSM sessions to kill" "Use TAB to select multiple, ENTER to confirm" selected "${session_list[@]}"; then
     return 0
   fi
 

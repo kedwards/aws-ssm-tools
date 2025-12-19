@@ -80,7 +80,7 @@ EOF
 
   # Mock menu_select_many to return a selection
   menu_select_many() {
-    local result_var="$2"
+    local result_var="$3"
     printf -v "$result_var" '%s' "PID: 12345 | Interactive Shell | Instance: i-abc123"
     return 0
   }
@@ -104,7 +104,7 @@ user     99999  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager
 EOF
 
   menu_select_many() {
-    local result_var="$2"
+    local result_var="$3"
     printf -v "$result_var" '%s' "PID: 99999 | Interactive Shell | Instance: i-test"
     return 0
   }
@@ -148,7 +148,7 @@ user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager
 EOF
 
   menu_select_many() {
-    local result_var="$2"
+    local result_var="$3"
     printf -v "$result_var" '%s' ""
     return 0
   }
@@ -172,7 +172,7 @@ user     22222  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager
 EOF
 
   menu_select_many() {
-    local result_var="$2"
+    local result_var="$3"
     printf -v "$result_var" '%s\n%s' "PID: 11111 | Interactive Shell | Instance: i-aaa" "PID: 22222 | Interactive Shell | Instance: i-bbb"
     return 0
   }
