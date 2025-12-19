@@ -19,7 +19,7 @@ setup() {
 
   # Stub ps command
   ps() {
-    if [[ "$1" == "aux" ]]; then
+    if [[ "$1" == "aux" || "$1" == "eww" ]]; then
       cat "$PS_OUTPUT_FILE"
       return 0
     fi

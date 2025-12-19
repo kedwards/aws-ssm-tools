@@ -14,8 +14,8 @@ ssm_kill() {
     return 0
   fi
 
-  # Find all session-manager-plugin processes
-  mapfile -t sessions < <(ps aux | grep "session-manager-plugin" | grep -v grep || true)
+  # Find all session-manager-plugin processes (with environment)
+  mapfile -t sessions < <(ps eww aux | grep "session-manager-plugin" | grep -v grep || true)
   
   if [[ ${#sessions[@]} -eq 0 ]]; then
     echo "No active SSM sessions found."
@@ -26,10 +26,20 @@ ssm_kill() {
   local session_list=()
   local line
   for line in "${sessions[@]}"; do
-    local pid target host port session_type instance_name
+    local pid target host port session_type instance_name profile region
     
     # Extract PID
     pid=$(awk '{print $2}' <<<"$line")
+    
+    # Extract profile from environment
+    profile=$(echo "$line" | grep -oP 'AWS_PROFILE=\K[^ ]+' | head -n1)
+    [[ -z "$profile" ]] && profile="unknown"
+    
+    # Extract region
+    region=$(echo "$line" | grep -oP 'session-manager-plugin\s+\S+\s+\K[a-z]{2}-[a-z]+-\d+' | head -n1)
+    if [[ -z "$region" ]]; then
+      region=$(echo "$line" | grep -oP 'ssm\.\K[a-z]{2}-[a-z]+-\d+' | head -n1)
+    fi
     
     # Extract target
     target=$(grep -oP '\-\-target \K[^ ]+' <<<"$line" || true)
@@ -60,11 +70,22 @@ ssm_kill() {
         --output text 2>/dev/null || echo "")
     fi
     
+    # Build display string
+    local region_display=""
+    if [[ -n "$region" ]]; then
+      region_display=" | Region: $region"
+    fi
+    
+    local profile_display=""
+    if [[ -n "$profile" && "$profile" != "unknown" ]]; then
+      profile_display=" | Profile: $profile"
+    fi
+    
     # Add to list
     if [[ -n "$instance_name" && "$instance_name" != "None" ]]; then
-      session_list+=("PID: $pid | $session_type | Instance: $instance_name (${target:-unknown})")
+      session_list+=("PID: $pid | $session_type | Instance: $instance_name (${target:-unknown})${region_display}${profile_display}")
     else
-      session_list+=("PID: $pid | $session_type | Instance: ${target:-unknown}")
+      session_list+=("PID: $pid | $session_type | Instance: ${target:-unknown}${region_display}${profile_display}")
     fi
   done
 
