@@ -182,7 +182,38 @@ EOF
     sleep 2
   done
 
-  # TODO: Output display will be implemented in Step 18
+  # Display results
+  for inst in "${instance_ids[@]}"; do
+    local status out err
+    status=$(aws ssm get-command-invocation \
+      --command-id "$cmd_id" \
+      --instance-id "$inst" \
+      --query Status --output text) || true
+    out=$(aws ssm get-command-invocation \
+      --command-id "$cmd_id" \
+      --instance-id "$inst" \
+      --query StandardOutputContent --output text) || true
+    err=$(aws ssm get-command-invocation \
+      --command-id "$cmd_id" \
+      --instance-id "$inst" \
+      --query StandardErrorContent --output text) || true
+
+    echo "------------------------------------"
+    echo "RESULTS FROM $inst (STATUS $status):"
+    [[ -n "$out" ]] && {
+      echo "STDOUT:"
+      echo "$out"
+      echo "------------------------------------"
+    }
+    [[ -n "$err" ]] && {
+      echo "STDERR:"
+      echo "$err"
+      echo "------------------------------------"
+    }
+    if [[ -z "$out" && -z "$err" ]]; then
+      echo "NO OUTPUT RETURNED"
+    fi
+  done
 
   return 0
 }
