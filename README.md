@@ -1,0 +1,333 @@
+# AWS SSM Tools
+
+A Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions with interactive menus and multi-instance command execution.
+
+## Features
+
+- 🔐 **AWS Authentication** - Integration with [Granted](https://granted.dev) for AWS SSO
+- 🖥️  **Interactive Menus** - fzf-powered selection with fallback to bash `select`
+- 🚀 **Shell Sessions** - Quick SSM session connections to EC2 instances
+- ⚡ **Command Execution** - Run commands on multiple instances simultaneously
+- 📋 **Session Management** - List and terminate active SSM sessions
+- 🔌 **Port Forwarding** - Config-based port forwarding to instances
+- 💾 **Saved Commands** - Reusable command library
+- ✅ **155 Tests** - Comprehensive test coverage with BATS
+
+## Installation
+
+```bash
+git clone https://github.com/yourusername/aws-ssm-tools
+cd aws-ssm-tools
+./install.sh
+```
+
+This installs to `~/.local/share/aws-ssm-tools` with symlinks in `~/.local/bin`.
+
+## Prerequisites
+
+**Required:**
+- `bash` (4.0+)
+- `aws` CLI
+- [`assume` (Granted)](https://granted.dev) - for AWS SSO authentication
+- `session-manager-plugin` - for SSM connections
+
+**Optional:**
+- `fzf` - for enhanced interactive menus (falls back to bash `select`)
+
+## Quick Start
+
+### 1. Authentication
+
+```bash
+# Show authentication instructions
+ssm login -p prod -r us-east-1
+
+# Follow the instructions and run:
+assume prod -r us-east-1
+
+# Verify authentication
+aws sts get-caller-identity
+```
+
+**Note:** Due to shell limitations, `assume` must be run directly in your terminal to export credentials properly.
+
+### 2. Connect to an Instance
+
+```bash
+# Interactive selection
+ssm connect
+
+# Direct connection
+ssm connect -p prod -r us-east-1
+
+# Config-based port forwarding
+ssm connect --config
+```
+
+### 3. Execute Commands
+
+```bash
+# Interactive: select command and instances
+ssm exec
+
+# Explicit command on multiple instances
+ssm exec -c "uptime" -i "web-server;db-server"
+
+# Use saved command
+ssm exec -c disk-usage -i prod-app
+```
+
+### 4. Manage Sessions
+
+```bash
+# List active sessions
+ssm list
+
+# Terminate sessions
+ssm kill
+```
+
+## Commands
+
+### `ssm login`
+Displays authentication instructions for AWS SSO via Granted.
+
+**Options:**
+- `-p, --profile` - AWS profile
+- `-r, --region` - AWS region
+
+**Example:**
+```bash
+ssm login -p production -r us-east-1
+```
+
+### `ssm connect`
+Start an SSM shell session or port forwarding to an EC2 instance.
+
+**Options:**
+- `-p, --profile` - AWS profile
+- `-r, --region` - AWS region
+- `-c, --config` - Use config-based port forwarding
+- `-f, --file` - Config file path (default: `~/.ssmf.cfg`)
+- `-n, --dry-run` - Show commands without executing
+
+**Examples:**
+```bash
+# Interactive instance selection
+ssm connect -p prod
+
+# Config-based port forwarding
+ssm connect --config -f ~/.ports.cfg
+```
+
+### `ssm exec`
+Execute a command on one or more EC2 instances via SSM.
+
+**Options:**
+- `-c <command>` - Command to execute
+- `-p, --profile` - AWS profile
+- `-r, --region` - AWS region
+- `-i <instances>` - Semicolon-separated instance names/IDs
+- `-n, --dry-run` - Show commands without executing
+- `-y, --yes` - Non-interactive mode
+
+**Examples:**
+```bash
+# Interactive command and instance selection
+ssm exec
+
+# Explicit command on multiple instances
+ssm exec -c "df -h" -i "web1;web2;web3"
+
+# Use saved command
+ssm exec -c system-uptime -p prod
+```
+
+### `ssm list`
+List active SSM sessions on the current host.
+
+**Example:**
+```bash
+ssm list
+```
+
+### `ssm kill`
+Terminate active SSM sessions.
+
+**Examples:**
+```bash
+# Interactive selection
+ssm kill
+
+# Kill all sessions (with confirmation)
+ssm kill --all
+```
+
+## Configuration
+
+### Saved Commands
+
+Create command files in these locations (checked in order):
+1. `~/.config/ssm/commands.config` (user commands)
+2. `./examples/commands.config` (example commands)
+3. Custom path via `$AWS_SSM_COMMAND_FILE`
+
+**Format:**
+```
+# Command format: NAME|Description|Command to execute
+disk-usage|Check disk usage|df -h
+memory-info|Display memory information|free -h
+docker-status|Check Docker containers|docker ps -a
+```
+
+### Port Forwarding Config
+
+Create `~/.ssmf.cfg` with INI-style sections:
+
+```ini
+[postgres-prod]
+profile = production
+region = us-east-1
+name = postgres-primary
+host = localhost
+port = 5432
+local_port = 5432
+
+[redis-staging]
+profile = staging
+region = us-west-2
+name = redis-cache
+host = localhost
+port = 6379
+local_port = 6379
+```
+
+Then use:
+```bash
+ssm connect --config
+```
+
+## Environment Variables
+
+### Logging
+- `AWS_LOG_LEVEL` - DEBUG|INFO|WARN|ERROR (default: INFO)
+- `AWS_LOG_COLOR` - 1=enabled, 0=disabled (default: 1)
+- `AWS_LOG_TIMESTAMP` - 1=show, 0=hide (default: 1)
+- `AWS_LOG_FILE` - Log file path (default: none)
+
+### Behavior
+- `MENU_NON_INTERACTIVE` - Disable interactive prompts
+- `MENU_NO_FZF` - Force bash `select` instead of fzf
+- `AWS_SSM_COMMAND_FILE` - Custom commands file path
+
+## Development
+
+### Running Tests
+
+```bash
+# All unit tests
+task test
+
+# Or use bats directly
+bats test/unit/
+
+# Run specific test file
+bats test/unit/ssm_exec.bats
+
+# Run specific test
+bats test/unit/ssm_exec.bats -f "polls for command completion"
+```
+
+### Linting
+
+```bash
+task lint
+
+# Or check specific file
+shellcheck lib/core/logging.sh
+```
+
+### CI
+
+```bash
+# Run all checks (lint + unit tests)
+task ci
+```
+
+## Architecture
+
+The codebase follows a layered architecture:
+
+```
+lib/
+├── core/           # Core utilities
+│   ├── logging.sh       # Structured logging
+│   ├── flags.sh         # Flag parsing
+│   ├── aws_auth.sh      # AWS authentication
+│   ├── aws.sh           # AWS helpers
+│   └── commands.sh      # Saved commands
+├── aws/            # AWS-specific modules
+│   ├── ec2.sh           # EC2 instance management
+│   └── ssm.sh           # SSM wrappers
+├── menu/           # Menu system (fzf/fallback)
+└── commands/       # CLI commands
+    ├── ssm_login.sh
+    ├── ssm_connect.sh
+    ├── ssm_exec.sh
+    ├── ssm_list.sh
+    └── ssm_kill.sh
+```
+
+### Key Patterns
+
+- **Test Guard Pattern** - Functions can be overridden for testing
+- **Non-Interactive Mode** - All commands support `--yes` flag
+- **Instance Caching** - 30s TTL to reduce API calls
+- **Dry-Run Mode** - Preview commands without execution
+
+## Troubleshooting
+
+### "No AWS credentials found"
+
+Run `ssm login` to see authentication instructions, then run `assume` directly:
+```bash
+assume your-profile -r us-east-1
+```
+
+### "session-manager-plugin not found"
+
+Install the Session Manager plugin:
+https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
+
+### fzf not working
+
+Install fzf for better menus, or the tool will fall back to bash `select`:
+```bash
+# macOS
+brew install fzf
+
+# Ubuntu/Debian
+apt install fzf
+
+# Arch
+pacman -S fzf
+```
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Contributing
+
+Contributions welcome! Please:
+1. Run tests: `task test`
+2. Run linter: `task lint`
+3. Follow existing code style
+4. Add tests for new features
+
+## Credits
+
+Built with:
+- [Granted](https://granted.dev) - AWS SSO authentication
+- [BATS](https://github.com/bats-core/bats-core) - Bash testing framework
+- [fzf](https://github.com/junegunn/fzf) - Command-line fuzzy finder
