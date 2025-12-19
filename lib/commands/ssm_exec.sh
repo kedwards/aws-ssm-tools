@@ -157,8 +157,31 @@ EOF
   fi
 
   log_info "Command launched with ID: $cmd_id"
+  local n_instances="${#instance_ids[@]}"
 
-  # TODO: Polling will be implemented in Step 17
+  # Poll for completion
+  while true; do
+    local finished=0
+    local inst
+    for inst in "${instance_ids[@]}"; do
+      local status
+      status=$(aws ssm get-command-invocation \
+        --command-id "$cmd_id" \
+        --instance-id "$inst" \
+        --query Status \
+        --output text 2>/dev/null | tr 'A-Z' 'a-z')
+      local now
+      now=$(date +%Y-%m-%dT%H:%M:%S%z)
+      echo "$now $inst: $status"
+      case "$status" in
+        pending|inprogress|delayed) : ;;
+        *) finished=$((finished+1)) ;;
+      esac
+    done
+    [[ $finished -ge $n_instances ]] && break
+    sleep 2
+  done
+
   # TODO: Output display will be implemented in Step 18
 
   return 0
