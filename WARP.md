@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-This is `aws-ssm-tools`, a Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions. The tool provides interactive menus (with fzf support) for connecting to EC2 instances via SSM and managing port forwarding through configuration files.
+This is `aws-ssm-tools`, a Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions. The tool provides interactive menus (with fzf support) for connecting to EC2 instances via SSM, executing commands on multiple instances, and managing sessions.
 
 ## Development Commands
 
@@ -78,6 +78,9 @@ The codebase follows a layered architecture with clear separation of concerns:
 **Commands** (`lib/commands/`)
 - `ssm_login.sh` - Interactive AWS SSO login via Granted
 - `ssm_connect.sh` - Connect to instances (shell or port-forward modes)
+- `ssm_exec.sh` - Execute commands on multiple instances with polling and output display
+- `ssm_list.sh` - List active SSM sessions
+- `ssm_kill.sh` - Terminate SSM sessions
 
 **Entry Point** (`bin/ssm`)
 - Main dispatcher that sources all libraries and routes subcommands
@@ -206,7 +209,19 @@ Config sections can be selected interactively via `ssm connect --config`.
 - `fzf` - for enhanced interactive menus (falls back to Bash `select`)
 - `shellcheck` - for linting
 
-## Current Branch Context
+## Implementation Status
 
-Working on branch: `feature/arch-split`
-This appears to be related to architectural refactoring or code organization improvements.
+**Completed Commands** (155 tests passing):
+- `ssm login` - AWS SSO authentication via Granted
+- `ssm connect` - Shell sessions and config-based port forwarding
+- `ssm exec` - Multi-instance command execution (54 tests)
+  - Saved command support from config files
+  - Interactive or CLI-driven instance selection
+  - Semicolon-separated multi-instance targeting
+  - Real-time polling with status updates
+  - Stdout/stderr display from all instances
+- `ssm list` - List active SSM sessions
+- `ssm kill` - Terminate active sessions
+
+**Current Branch**: `feature/arch-split`
+Consolidating three versions of the tool with improved architecture and comprehensive test coverage.
