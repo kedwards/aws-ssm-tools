@@ -16,6 +16,7 @@ source "$ROOT_DIR/lib/core/aws_auth.sh"
 
 # AWS Helpers
 source "$ROOT_DIR/lib/core/aws.sh"
+source "$ROOT_DIR/lib/core/commands.sh"
 source "$ROOT_DIR/lib/aws/ec2.sh"
 source "$ROOT_DIR/lib/aws/ssm.sh"
 
@@ -24,6 +25,7 @@ source "$ROOT_DIR/lib/commands/ssm_login.sh"
 source "$ROOT_DIR/lib/commands/ssm_connect.sh"
 source "$ROOT_DIR/lib/commands/ssm_list.sh"
 source "$ROOT_DIR/lib/commands/ssm_kill.sh"
+source "$ROOT_DIR/lib/commands/ssm_exec.sh"
 
 usage() {
   cat <<EOF
@@ -34,6 +36,7 @@ AWS Systems Manager (SSM) session management tool.
 Commands:
   login      Login to AWS via SSO (using Granted)
   connect    Start SSM shell session or port forwarding to an instance
+  exec       Run a shell command on one or more instances via SSM
   list       List active SSM sessions on this host
   kill       Terminate active SSM sessions
 
@@ -61,6 +64,9 @@ main() {
       ;;
     connect)
       ssm_connect "$@"
+      ;;
+    exec)
+      ssm_exec "$@"
       ;;
     list)
       ssm_list "$@"

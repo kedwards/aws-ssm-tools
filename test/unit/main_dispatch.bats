@@ -23,6 +23,7 @@ setup() {
   [[ "$output" =~ "Commands:" ]]
   [[ "$output" =~ "login" ]]
   [[ "$output" =~ "connect" ]]
+  [[ "$output" =~ "exec" ]]
   [[ "$output" =~ "list" ]]
   [[ "$output" =~ "kill" ]]
 }
@@ -67,4 +68,11 @@ setup() {
   run ./bin/ssm kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "No active SSM sessions found" ]]
+}
+
+@test "bin/ssm exec --help works" {
+  run ./bin/ssm exec --help
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Usage: ssm exec" ]]
+  [[ "$output" =~ "Run a shell command via AWS SSM" ]]
 }
