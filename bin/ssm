@@ -23,6 +23,7 @@ source "$ROOT_DIR/lib/aws/ssm.sh"
 source "$ROOT_DIR/lib/commands/ssm_login.sh"
 source "$ROOT_DIR/lib/commands/ssm_connect.sh"
 source "$ROOT_DIR/lib/commands/ssm_list.sh"
+source "$ROOT_DIR/lib/commands/ssm_kill.sh"
 
 main() {
   local cmd="${1:-}"
@@ -37,6 +38,9 @@ main() {
       ;;
     list)
       ssm_list "$@"
+      ;;
+    kill)
+      ssm_kill "$@"
       ;;
     *)
       echo "Unknown command: $cmd" >&2

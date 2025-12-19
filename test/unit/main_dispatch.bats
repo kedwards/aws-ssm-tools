@@ -33,3 +33,15 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage: ssm list" ]]
 }
+
+@test "bin/ssm kill --help works" {
+  run ./bin/ssm kill --help
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Usage: ssm kill" ]]
+}
+
+@test "bin/ssm kill runs successfully" {
+  run ./bin/ssm kill
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "No active SSM sessions found" ]]
+}
