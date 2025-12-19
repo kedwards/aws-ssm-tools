@@ -9,7 +9,7 @@ EOF
 }
 
 ssm_list() {
-  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+  if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     ssm_list_usage
     return 0
   fi

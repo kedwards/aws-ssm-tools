@@ -22,6 +22,7 @@ source "$ROOT_DIR/lib/aws/ssm.sh"
 # Commands
 source "$ROOT_DIR/lib/commands/ssm_login.sh"
 source "$ROOT_DIR/lib/commands/ssm_connect.sh"
+source "$ROOT_DIR/lib/commands/ssm_list.sh"
 
 main() {
   local cmd="${1:-}"
@@ -29,10 +30,13 @@ main() {
 
   case "$cmd" in
     login)
-ssm_login "$@"
+      ssm_login "$@"
       ;;
     connect)
       ssm_connect "$@"
+      ;;
+    list)
+      ssm_list "$@"
       ;;
     *)
       echo "Unknown command: $cmd" >&2
