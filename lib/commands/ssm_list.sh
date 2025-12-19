@@ -16,7 +16,8 @@ ssm_list() {
 
   local current_profile="${AWS_PROFILE:-none}"
   local current_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-none}}"
-  echo "Active SSM sessions (Current profile: $current_profile, Current region: $current_region):"
+  echo "Active SSM sessions (Current profile: $current_profile, Current region: $current_region)"
+  echo ""
 
   # Find all session-manager-plugin processes (with environment)
   mapfile -t lines < <(ps eww aux | grep "[s]ession-manager-plugin" || true)
@@ -25,6 +26,10 @@ ssm_list() {
     echo "  (none found)"
     return 0
   fi
+
+  # Print table header
+  printf "%-8s  %-30s  %-35s  %-13s  %-10s\n" "PID" "TYPE" "INSTANCE" "REGION" "PROFILE"
+  printf "%-8s  %-30s  %-35s  %-13s  %-10s\n" "--------" "------------------------------" "-----------------------------------" "-------------" "----------"
 
   local line
   for line in "${lines[@]}"; do
@@ -91,22 +96,32 @@ ssm_list() {
       fi
     fi
     
-    # Display session info
-    local region_display=""
-    if [[ -n "$region" ]]; then
-      region_display=" | Region: $region"
-    fi
-    
-    local profile_display=""
-    if [[ -n "$profile" && "$profile" != "unknown" ]]; then
-      profile_display=" | Profile: $profile"
-    fi
-    
+    # Format instance display
+    local instance_display
     if [[ -n "$instance_name" && "$instance_name" != "None" ]]; then
-      echo "  PID: $pid | $session_type | Instance: $instance_name (${target:-unknown})${region_display}${profile_display}"
+      # Truncate long instance names
+      if (( ${#instance_name} > 15 )); then
+        instance_display="${instance_name:0:12}... (${target:0:10}...)"
+      else
+        instance_display="$instance_name ($target)"
+      fi
     else
-      echo "  PID: $pid | $session_type | Instance: ${target:-unknown}${region_display}${profile_display}"
+      instance_display="${target:-unknown}"
     fi
+    
+    # Format session type
+    local type_display="$session_type"
+    if (( ${#type_display} > 30 )); then
+      type_display="${type_display:0:27}..."
+    fi
+    
+    # Display as table row
+    printf "%-8s  %-30s  %-35s  %-13s  %-10s\n" \
+      "$pid" \
+      "$type_display" \
+      "$instance_display" \
+      "${region:-unknown}" \
+      "${profile:-unknown}"
   done
   
   echo ""

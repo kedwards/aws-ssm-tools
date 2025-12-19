@@ -70,7 +70,7 @@ EOF
   
   run ssm_list
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "PID: 12345" ]]
+  [[ "$output" =~ "12345" ]]
   [[ "$output" =~ "Interactive Shell" ]]
   [[ "$output" =~ "i-abc123" ]]
 }
@@ -87,8 +87,9 @@ EOF
   
   run ssm_list
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "PID: 12345" ]]
-  [[ "$output" =~ "Port: 5432 -> rds.example.com" ]]
+  [[ "$output" =~ "12345" ]]
+  [[ "$output" =~ "Port: 5432" ]]
+  [[ "$output" =~ "rds.example.com" ]]
   [[ "$output" =~ "i-abc123" ]]
 }
 
@@ -158,8 +159,8 @@ EOF
   
   run ssm_list
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "PID: 12345" ]]
-  [[ "$output" =~ "PID: 12346" ]]
+  [[ "$output" =~ "12345" ]]
+  [[ "$output" =~ "12346" ]]
   [[ "$output" =~ "i-aaa111" ]]
   [[ "$output" =~ "i-bbb222" ]]
 }
