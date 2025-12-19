@@ -14,6 +14,21 @@ ensure_aws_cli() {
   }
 }
 
+aws_list_profiles() {
+  if [[ ! -f "$HOME/.aws/config" ]]; then
+    return 0
+  fi
+
+  # Parse [default] and [profile name] sections
+  grep -E '^\[(default|profile .+)\]' "$HOME/.aws/config" | while IFS= read -r line; do
+    if [[ "$line" =~ ^\[default\]$ ]]; then
+      echo "default"
+    elif [[ "$line" =~ ^\[profile\ (.+)\]$ ]]; then
+      echo "${BASH_REMATCH[1]}"
+    fi
+  done
+}
+
 aws_sso_validate_or_login() {
   # stub for now
   return 0
