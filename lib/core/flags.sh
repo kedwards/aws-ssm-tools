@@ -8,6 +8,8 @@ ASSUME_YES=false
 CONFIG_FILE=""
 PROFILE=""
 REGION=""
+COMMAND_ARG=""
+INSTANCES_ARG=""
 
 POSITIONAL=()
 
@@ -20,9 +22,17 @@ parse_common_flags() {
         DRY_RUN=true
         shift
         ;;
-      -c|--config)
+      -c|--command)
+        COMMAND_ARG="$2"
+        shift 2
+        ;;
+      --config)
         CONFIG_MODE=true
         shift
+        ;;
+      -i|--instances)
+        INSTANCES_ARG="$2"
+        shift 2
         ;;
       -f|--file)
         CONFIG_FILE="$2"
