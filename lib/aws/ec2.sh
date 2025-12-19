@@ -2,6 +2,24 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/../core/test_guard.sh"
 
+guard_function_override aws_expand_instances || aws_expand_instances() {
+  local name="$1"
+
+  # If already an instance ID, return it directly
+  if [[ "$name" == i-* ]]; then
+    echo "$name"
+    return 0
+  fi
+
+  log_debug "Expanding instance name '$name' via EC2 describe-instances"
+
+  # Query AWS for instances with matching Name tag
+  aws ec2 describe-instances \
+    --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=$name" \
+    --query 'Reservations[].Instances[].InstanceId' \
+    --output text 2>/dev/null | tr '\t' '\n'
+}
+
 guard_function_override aws_ec2_select_instance || aws_ec2_select_instance() {
   local prompt="$1"
   local target="$2"
