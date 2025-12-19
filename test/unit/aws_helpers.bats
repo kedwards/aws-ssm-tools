@@ -114,3 +114,87 @@ EOF
   [ "${profiles[0]}" = "dev" ]
   [ "${profiles[1]}" = "prod" ]
 }
+
+# aws_ssm_config_get tests
+
+@test "aws_ssm_config_get returns empty for missing file" {
+  source ./lib/core/aws.sh
+  
+  result=$(aws_ssm_config_get "/nonexistent" "section" "key")
+  [ -z "$result" ]
+}
+
+@test "aws_ssm_config_get extracts value from INI section" {
+  cat > "$HOME/test.ini" <<EOF
+[db-conn]
+port = 5432
+host = localhost
+EOF
+
+  source ./lib/core/aws.sh
+  
+  result=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "port")
+  [ "$result" = "5432" ]
+}
+
+@test "aws_ssm_config_get handles spaces around equals" {
+  cat > "$HOME/test.ini" <<EOF
+[db-conn]
+port = 5432
+host=localhost
+region  =  us-east-1
+EOF
+
+  source ./lib/core/aws.sh
+  
+  port=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "port")
+  host=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "host")
+  region=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "region")
+  
+  [ "$port" = "5432" ]
+  [ "$host" = "localhost" ]
+  [ "$region" = "us-east-1" ]
+}
+
+@test "aws_ssm_config_get stops at next section" {
+  cat > "$HOME/test.ini" <<EOF
+[section1]
+key1 = value1
+
+[section2]
+key1 = value2
+key2 = value3
+EOF
+
+  source ./lib/core/aws.sh
+  
+  result1=$(aws_ssm_config_get "$HOME/test.ini" "section1" "key1")
+  result2=$(aws_ssm_config_get "$HOME/test.ini" "section2" "key1")
+  
+  [ "$result1" = "value1" ]
+  [ "$result2" = "value2" ]
+}
+
+@test "aws_ssm_config_get returns empty for missing key" {
+  cat > "$HOME/test.ini" <<EOF
+[db-conn]
+port = 5432
+EOF
+
+  source ./lib/core/aws.sh
+  
+  result=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "missing")
+  [ -z "$result" ]
+}
+
+@test "aws_ssm_config_get returns empty for missing section" {
+  cat > "$HOME/test.ini" <<EOF
+[db-conn]
+port = 5432
+EOF
+
+  source ./lib/core/aws.sh
+  
+  result=$(aws_ssm_config_get "$HOME/test.ini" "missing-section" "port")
+  [ -z "$result" ]
+}

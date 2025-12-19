@@ -29,6 +29,21 @@ aws_list_profiles() {
   done
 }
 
+aws_ssm_config_get() {
+  local file="$1"
+  local section="$2"
+  local key="$3"
+
+  [[ ! -f "$file" ]] && return 0
+
+  # Use awk to parse INI file
+  awk -F ' *= *' -v section="[$section]" -v key="$key" '
+    $0 == section { found=1; next }
+    found && $1 == key { print $2; exit }
+    found && /^\[.*\]/ { exit }
+  ' "$file"
+}
+
 aws_sso_validate_or_login() {
   # stub for now
   return 0
