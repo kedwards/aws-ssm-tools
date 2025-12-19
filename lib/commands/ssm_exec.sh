@@ -124,7 +124,40 @@ ssm_exec() {
 
   log_info "Sending command to ${#instance_ids[@]} instance(s)"
 
-  # TODO: AWS send-command will be implemented in Step 16
+  # Create temp JSON file for AWS CLI
+  local tmpfile
+  tmpfile=$(mktemp /tmp/ssm-script.XXXXXX)
+  trap 'rm -f "${tmpfile:-}"' EXIT
+
+  cat >"$tmpfile" <<EOF
+{
+  "Parameters": {
+    "commands": [
+      "#!/bin/bash",
+      "$COMMAND_ARG"
+    ],
+    "executionTimeout": ["600"]
+  }
+}
+EOF
+
+  # Send command via AWS SSM
+  local cmd_id
+  cmd_id=$(aws ssm send-command \
+    --instance-ids "${instance_ids[@]}" \
+    --document-name "AWS-RunShellScript" \
+    --cli-input-json "file://$tmpfile" \
+    --query 'Command.CommandId' \
+    --output text)
+
+  local send_ret=$?
+  if [[ $send_ret -ne 0 ]]; then
+    log_error "Failed to send command"
+    return 1
+  fi
+
+  log_info "Command launched with ID: $cmd_id"
+
   # TODO: Polling will be implemented in Step 17
   # TODO: Output display will be implemented in Step 18
 
