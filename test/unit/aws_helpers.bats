@@ -198,3 +198,120 @@ EOF
   result=$(aws_ssm_config_get "$HOME/test.ini" "missing-section" "port")
   [ -z "$result" ]
 }
+
+# choose_profile_and_region tests
+
+@test "choose_profile_and_region uses aws_list_profiles" {
+  cat > "$HOME/.aws/config" <<EOF
+[profile test-profile]
+region = us-west-2
+EOF
+
+  # Mock aws configure get
+  aws() {
+    if [[ "$1" == "configure" && "$2" == "get" ]]; then
+      echo "us-west-2"
+      return 0
+    fi
+    return 1
+  }
+  export -f aws
+
+  # Set non-interactive to avoid menu
+  export MENU_NON_INTERACTIVE=1
+  PROFILE="test-profile"
+  REGION=""
+
+  source ./lib/core/aws.sh
+  
+  choose_profile_and_region
+  [ "$PROFILE" = "test-profile" ]
+  [ "$REGION" = "us-west-2" ]
+}
+
+@test "choose_profile_and_region detects region from sso_region" {
+  cat > "$HOME/.aws/config" <<EOF
+[profile sso-profile]
+sso_region = us-east-1
+EOF
+
+  # Mock aws configure get - first call fails (no region), second succeeds (sso_region)
+  aws() {
+    if [[ "$1" == "configure" && "$2" == "get" ]]; then
+      if [[ "$3" == "region" ]]; then
+        return 1
+      elif [[ "$3" =~ sso_region ]]; then
+        echo "us-east-1"
+        return 0
+      fi
+    fi
+    return 1
+  }
+  export -f aws
+
+  export MENU_NON_INTERACTIVE=1
+  PROFILE="sso-profile"
+  REGION=""
+
+  source ./lib/core/aws.sh
+  
+  choose_profile_and_region
+  [ "$REGION" = "us-east-1" ]
+}
+
+@test "choose_profile_and_region exports AWS_REGION" {
+  cat > "$HOME/.aws/config" <<EOF
+[profile test]
+region = us-west-2
+EOF
+
+  aws() {
+    if [[ "$1" == "configure" && "$2" == "get" ]]; then
+      echo "us-west-2"
+      return 0
+    fi
+    return 1
+  }
+  export -f aws
+
+  export MENU_NON_INTERACTIVE=1
+  PROFILE="test"
+  REGION=""
+
+  source ./lib/core/aws.sh
+  
+  choose_profile_and_region
+  [ "$AWS_REGION" = "us-west-2" ]
+  [ "$AWS_DEFAULT_REGION" = "us-west-2" ]
+}
+
+@test "choose_profile_and_region fails when profile required in non-interactive" {
+  source ./lib/core/aws.sh
+  
+  export MENU_NON_INTERACTIVE=1
+  PROFILE=""
+  REGION=""
+
+  run choose_profile_and_region
+  [ "$status" -eq 1 ]
+}
+
+@test "choose_profile_and_region fails when region required in non-interactive" {
+  cat > "$HOME/.aws/config" <<EOF
+[profile test]
+EOF
+
+  aws() {
+    return 1  # No region found
+  }
+  export -f aws
+
+  source ./lib/core/aws.sh
+  
+  export MENU_NON_INTERACTIVE=1
+  PROFILE="test"
+  REGION=""
+
+  run choose_profile_and_region
+  [ "$status" -eq 1 ]
+}

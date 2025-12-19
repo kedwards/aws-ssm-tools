@@ -56,16 +56,12 @@ choose_profile_and_region() {
   fi
 
   if [[ -z "$PROFILE" ]]; then
-    PROFILE="$(aws configure get profile 2>/dev/null || true)"
-  fi
-
-  if [[ -z "$PROFILE" ]]; then
     if [[ "${MENU_NON_INTERACTIVE:-0}" == "1" ]]; then
       log_error "AWS profile required but not set (non-interactive)"
       return 1
     fi
 
-    mapfile -t profiles < <(aws configure list-profiles)
+    mapfile -t profiles < <(aws_list_profiles)
     (( ${#profiles[@]} == 0 )) && {
       log_error "No AWS profiles found"
       return 1
@@ -79,8 +75,13 @@ choose_profile_and_region() {
     REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
   fi
 
+  # Try to detect region from AWS config (region or sso_region)
   if [[ -z "$REGION" ]]; then
-    REGION="$(aws configure get region --profile "$PROFILE" 2>/dev/null || true)"
+    REGION="$(
+      aws configure get region --profile "$PROFILE" 2>/dev/null || 
+      aws configure get sso_region --profile "$PROFILE" 2>/dev/null ||
+      true
+    )"
   fi
 
   if [[ -z "$REGION" ]]; then
@@ -90,11 +91,17 @@ choose_profile_and_region() {
     fi
 
     local regions=(
-      us-east-1 us-west-2
+      us-east-1 us-east-2
+      us-west-1 us-west-2
+      ca-central-1
+      eu-west-1 eu-central-1
+      ap-southeast-1 ap-northeast-1
     )
 
     menu_select_one "Select AWS region" "" REGION "${regions[@]}" || return 130
   fi
+
+  log_info "Using profile '$PROFILE' in region '$REGION'"
 
   export AWS_REGION="$REGION"
   export AWS_DEFAULT_REGION="$REGION"
