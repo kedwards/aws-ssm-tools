@@ -10,26 +10,35 @@ Usage: ssm exec [OPTIONS]
 
 Run a shell command via AWS SSM on one or more instances.
 
+Note: You must authenticate with AWS before running this command.
+      Use 'assume <profile> -r <region>' to authenticate.
+
 Options:
   -c <command>      Command to execute on the instances
-  -p <profile>      AWS profile (optionally with region as PROFILE:REGION)
-  -r <region>       AWS region (overrides region in profile or -p option)
-  -i <instances>    Instance names or IDs (semicolon-separated for multiple)
+  -i <instances>    Instance names or IDs (comma or semicolon-separated)
   -n, --dry-run     Show what would be executed without running
   -y, --yes         Non-interactive mode (auto-select first option)
   -h, --help        Show this help message
 
 Examples:
-  ssm exec -c 'ls -lF; uptime' -p prod -i Report                    # single instance
-  ssm exec -c 'ls -lF; uptime' -p prod:us-west-2 -i Report          # with region
-  ssm exec -c 'ls -lF; uptime' -p prod -r us-west-2 -i Report       # region via -r
-  ssm exec -c 'ls -lF; uptime' -p prod -i 'Report;Singleton'        # multiple
-  ssm exec -c 'ls -lF; uptime' -p prod                              # interactive instances
-  ssm exec -p prod                                                  # interactive command + instances
-  ssm exec -c 'ls -lF; uptime'                                      # interactive profile
-  ssm exec                                                          # fully interactive
+  # Authenticate first
+  assume prod -r us-west-2
 
-Note: All options are optional and can be combined in any order.
+  # Run command on single instance (by name)
+  ssm exec -c 'df -h' -i KeyMaster
+
+  # Run command on single instance (by ID)
+  ssm exec -c 'df -h' -i i-1234567890abcdef0
+
+  # Run command on multiple instances
+  ssm exec -c 'df -h' -i KeyMaster,Admin
+  ssm exec -c 'df -h' -i 'KeyMaster;Admin'
+
+  # Interactive instance selection
+  ssm exec -c 'uptime'
+
+  # Fully interactive (select command and instances)
+  ssm exec
 EOF
 }
 
@@ -58,25 +67,17 @@ ssm_exec() {
     return 1
   fi
 
-  # Auto-detect region from AWS config if profile set but region not
-  if [[ -z "${REGION:-}" && -n "${PROFILE:-}" && -f "$HOME/.aws/config" ]]; then
-    REGION=$(
-      aws configure get profile."$PROFILE".region 2>/dev/null ||
-      aws configure get profile."$PROFILE".sso_region 2>/dev/null ||
-      true
-    )
-  fi
-
-  # Profile / region selection and validation
-  choose_profile_and_region || return 1
-  aws_assume_profile "$PROFILE" "$REGION" || return 1
+  # Validate AWS authentication
+  aws_auth_assume "${PROFILE:-}" "${REGION:-}" || return 1
 
   # Expand instances
   local instance_ids=()
 
   if [[ -n "${INSTANCES_ARG:-}" ]]; then
-    # Explicit instances via -i flag (semicolon-separated)
-    IFS=';' read -ra instance_names <<<"$INSTANCES_ARG"
+    # Explicit instances via -i flag (comma or semicolon-separated)
+    # Replace commas with semicolons for consistent parsing
+    local instances_normalized="${INSTANCES_ARG//,/;}"
+    IFS=';' read -ra instance_names <<<"$instances_normalized"
     local name
     for name in "${instance_names[@]}"; do
       name="$(echo "$name" | xargs)"  # Trim whitespace
@@ -98,7 +99,7 @@ ssm_exec() {
 
     local selections
     local ret
-    menu_select_many "Select instances for SSM command" selections "${INSTANCE_LIST[@]}"
+    menu_select_many "Select instances for SSM command" "" selections "${INSTANCE_LIST[@]}"
     ret=$?
     if [[ $ret -ne 0 ]]; then
       return $ret

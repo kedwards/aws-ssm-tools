@@ -77,89 +77,83 @@ teardown() {
   assert_success
 }
 
-@test "aws_auth_assume fails fast when assume command is missing" {
-  assume() { return 127; }
+@test "aws_auth_assume fails when no credentials exist" {
+  stub_sts_invalid
 
   run aws_auth_assume default us-west-2
 
   assert_failure
-  assert_output --partial "assume"
+  assert_output --partial "No AWS credentials found"
 }
 
-@test "aws_auth_assume invokes assume when not authenticated" {
-  non_interactive_mode() { return 1; }
-
-  assume() {
-    echo "ASSUME CALLED: $*"
-    export AWS_ACCESS_KEY_ID=AKIA_TEST
-    export AWS_SECRET_ACCESS_KEY=SECRET
-    export AWS_SESSION_TOKEN=TOKEN
-    return 0
-  }
-
-  run aws_auth_assume test us-west-2
-
-  assert_success
-  assert_output --partial "ASSUME CALLED: test -r us-west-2"
-}
-
-@test "aws_auth_assume fails if assume returns non-zero" {
-  non_interactive_mode() { return 1; }
-
-
-  assume() {
-    echo "ASSUME FAILED"
-    return 1
-  }
-
-  run aws_auth_assume default us-west-2
-
-  assert_failure
-  assert_output --partial "Failed"
-}
-
-@test "aws_auth_assume fails if assume does not export credentials" {
-  non_interactive_mode() { return 1; }
-  assume() {
-    echo "ASSUME CALLED"
-    return 0
-  }
-
-  run aws_auth_assume default us-west-2
-
-  assert_failure
-  assert_output --partial "did not produce valid AWS credentials"
-}
-
-@test "aws_auth_assume skips assume when already authenticated" {
+@test "aws_auth_assume succeeds when credentials exist" {
   export AWS_ACCESS_KEY_ID=AKIA_TEST
   export AWS_SECRET_ACCESS_KEY=SECRET
   export AWS_SESSION_TOKEN=TOKEN
+  export AWS_PROFILE=default
+  export AWS_REGION=us-west-2
 
   stub_sts_valid
-
-  assume() {
-    echo "ERROR: assume should not be called"
-    return 99
-  }
 
   run aws_auth_assume default us-west-2
 
   assert_success
-  refute_output --partial "ERROR"
 }
 
-@test "aws_auth_assume exports AWS_PROFILE and AWS_REGION on success" {
-  non_interactive_mode() { return 1; }
+@test "aws_auth_assume fails when profile mismatch" {
+  export AWS_ACCESS_KEY_ID=AKIA_TEST
+  export AWS_SECRET_ACCESS_KEY=SECRET
+  export AWS_SESSION_TOKEN=TOKEN
+  export AWS_PROFILE=prod
+  export AWS_REGION=us-west-2
 
-  assume() {
-    export AWS_ACCESS_KEY_ID=AKIA_TEST
-    export AWS_SECRET_ACCESS_KEY=SECRET
-    export AWS_SESSION_TOKEN=TOKEN
-    return 0
-  }
+  stub_sts_valid
 
-  stub_sts_invalid
+  run aws_auth_assume dev us-west-2
+
+  assert_failure
+  assert_output --partial "Currently authenticated with profile 'prod'"
+  assert_output --partial "Requested profile 'dev'"
+}
+
+@test "aws_auth_assume fails when region mismatch" {
+  export AWS_ACCESS_KEY_ID=AKIA_TEST
+  export AWS_SECRET_ACCESS_KEY=SECRET
+  export AWS_SESSION_TOKEN=TOKEN
+  export AWS_PROFILE=default
+  export AWS_REGION=us-east-1
+
+  stub_sts_valid
+
+  run aws_auth_assume default us-west-2
+
+  assert_failure
+  assert_output --partial "Currently authenticated with region 'us-east-1'"
+  assert_output --partial "Requested region 'us-west-2'"
+}
+
+@test "aws_auth_assume succeeds with matching profile and region" {
+  export AWS_ACCESS_KEY_ID=AKIA_TEST
+  export AWS_SECRET_ACCESS_KEY=SECRET
+  export AWS_SESSION_TOKEN=TOKEN
+  export AWS_PROFILE=default
+  export AWS_REGION=us-west-2
+
+  stub_sts_valid
+
+  run aws_auth_assume default us-west-2
+
+  assert_success
+}
+
+@test "aws_auth_assume succeeds with valid credentials" {
+  export AWS_ACCESS_KEY_ID=AKIA_TEST
+  export AWS_SECRET_ACCESS_KEY=SECRET
+  export AWS_SESSION_TOKEN=TOKEN
+  export AWS_PROFILE=test-profile
+  export AWS_REGION=us-west-2
+
+  stub_sts_valid
 
   run aws_auth_assume test-profile us-west-2
 
@@ -171,20 +165,6 @@ teardown() {
 
   run aws_auth_assume default us-west-2
   assert_success
-}
-
-@test "aws_auth_assume fails fast when no AWS auth exists" {
-  non_interactive_mode() { return 1; }
-
-  unset -f assume
-
-  stub_assume_missing
-  stub_sts_invalid
-
-  run aws_auth_assume default us-west-2
-
-  assert_failure
-  assert_output --partial "'assume' command"
 }
 
 @test "aws_auth_assume is skipped during dry-run" {
@@ -211,21 +191,16 @@ teardown() {
   assert_success
 }
 
-@test "aws_auth_assume calls granted with profile and region" {
-  non_interactive_mode() { return 1; }
+@test "aws_auth_assume allows empty profile when authenticated" {
+  export AWS_ACCESS_KEY_ID=AKIA_TEST
+  export AWS_SECRET_ACCESS_KEY=SECRET
+  export AWS_SESSION_TOKEN=TOKEN
+  export AWS_PROFILE=any-profile
+  export AWS_REGION=us-west-2
 
-  assume() {
-    echo "ASSUME CALLED: $*"
-    export AWS_ACCESS_KEY_ID=AKIA_TEST
-    export AWS_SECRET_ACCESS_KEY=SECRET
-    export AWS_SESSION_TOKEN=TOKEN
-    return 0
-  }
+  stub_sts_valid
 
-  stub_sts_invalid
-
-  run aws_auth_assume test us-west-2
+  run aws_auth_assume "" us-west-2
 
   assert_success
-  assert_output --partial "ASSUME CALLED: test -r us-west-2"
 }

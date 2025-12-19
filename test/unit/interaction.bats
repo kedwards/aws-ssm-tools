@@ -26,15 +26,14 @@ setup() {
   assert_output --partial "not allowed in non-interactive mode"
 }
 
-@test "aws_auth_assume fails fast without hanging" {
-  non_interactive_mode() { return 0; }   # interaction disabled
+@test "aws_auth_assume fails fast without credentials" {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  aws() { return 1; }  # STS call fails
 
   run aws_auth_assume test us-west-2
 
   assert_failure
-  assert_output --partial "Interaction is disabled"
-  assert_output --partial "Run interactively"
-  assert_output --partial "assume test"
+  assert_output --partial "No AWS credentials found"
+  assert_output --partial "Authenticate first with: assume"
 }
 

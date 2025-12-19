@@ -22,20 +22,34 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
   [[ "${SHOW_HELP:-false}" == true ]] && return 0
   [[ "${DRY_RUN:-false}" == true ]] && return 0
 
-  # Already authenticated (env creds OR STS)
-  if aws_auth_is_valid || aws_auth_detected; then
-    log_debug "AWS credentials already present"
-    return 0
+  # Check if already authenticated
+  if ! (aws_auth_is_valid || aws_auth_detected); then
+    log_error "No AWS credentials found"
+    log_error "Authenticate first with: assume <profile> -r <region>"
+    log_error "Or run: ssm login"
+    return 1
   fi
 
-  # Not authenticated - provide helpful error
-  log_error "No AWS credentials found"
-  log_error ""
-  log_error "Please authenticate first using ONE of:"
-  log_error "  1. Run: assume $profile -r $region"
-  log_error "  2. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN"
-  log_error "  3. Configure ~/.aws/credentials"
-  log_error ""
-  log_error "Then run your ssm command again."
-  return 1
+  # Validate we're using the expected profile/region if specified
+  if [[ -n "$profile" ]]; then
+    local current_profile="${AWS_PROFILE:-}"
+    if [[ -n "$current_profile" && "$current_profile" != "$profile" ]]; then
+      log_error "Currently authenticated with profile '$current_profile'"
+      log_error "Requested profile '$profile'"
+      log_error "Run 'assume $profile' to switch profiles"
+      return 1
+    fi
+  fi
+
+  if [[ -n "$region" ]]; then
+    local current_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+    if [[ -n "$current_region" && "$current_region" != "$region" ]]; then
+      log_error "Currently authenticated with region '$current_region'"
+      log_error "Requested region '$region'"
+      log_error "Run 'assume <profile> -r $region' to switch regions"
+      return 1
+    fi
+  fi
+
+  return 0
 }

@@ -16,7 +16,7 @@ ensure_aws_cli() { return 0; }
 parse_common_flags() { return 0; }
 aws_ssm_select_command() { eval "$1='uptime'"; return 0; }
 choose_profile_and_region() { PROFILE="test"; REGION="us-east-1"; return 0; }
-aws_assume_profile() { return 0; }
+aws_auth_assume() { return 0; }
 aws_expand_instances() { echo "i-abc123"; return 0; }
 aws_get_all_running_instances() { INSTANCE_LIST=("web i-abc123"); }
 menu_select_many() { eval "$2='web i-abc123'"; return 0; }

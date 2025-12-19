@@ -32,6 +32,10 @@ setup() {
   
   # Create mock .aws directory
   mkdir -p "$HOME/.aws"
+
+  # Unset AWS environment variables to ensure tests are isolated
+  unset AWS_PROFILE AWS_REGION AWS_DEFAULT_REGION
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 teardown() {
