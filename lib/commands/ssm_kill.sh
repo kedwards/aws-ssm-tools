@@ -15,7 +15,7 @@ ssm_kill() {
   fi
 
   # Find all session-manager-plugin processes (with environment)
-  mapfile -t sessions < <(ps eww aux | grep "session-manager-plugin" | grep -v grep || true)
+  mapfile -t sessions < <(ps eww aux | grep "[s]ession-manager-plugin" || true)
   
   if [[ ${#sessions[@]} -eq 0 ]]; then
     echo "No active SSM sessions found."

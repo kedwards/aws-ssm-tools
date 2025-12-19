@@ -19,7 +19,7 @@ ssm_list() {
   echo "Active SSM sessions (Current profile: $current_profile, Current region: $current_region):"
 
   # Find all session-manager-plugin processes (with environment)
-  mapfile -t lines < <(ps eww aux | grep "session-manager-plugin" | grep -v grep || true)
+  mapfile -t lines < <(ps eww aux | grep "[s]ession-manager-plugin" || true)
   
   if [[ ${#lines[@]} -eq 0 ]]; then
     echo "  (none found)"
