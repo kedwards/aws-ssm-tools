@@ -25,8 +25,34 @@ source "$ROOT_DIR/lib/commands/ssm_connect.sh"
 source "$ROOT_DIR/lib/commands/ssm_list.sh"
 source "$ROOT_DIR/lib/commands/ssm_kill.sh"
 
+usage() {
+  cat <<EOF
+Usage: ssm <command> [options]
+
+AWS Systems Manager (SSM) session management tool.
+
+Commands:
+  login      Login to AWS via SSO (using Granted)
+  connect    Start SSM shell session or port forwarding to an instance
+  list       List active SSM sessions on this host
+  kill       Terminate active SSM sessions
+
+Options:
+  -h, --help Show this help message
+
+Run 'ssm <command> --help' for more information on a specific command.
+EOF
+}
+
 main() {
   local cmd="${1:-}"
+  
+  # Handle help or no command
+  if [[ -z "$cmd" ]] || [[ "$cmd" == "-h" ]] || [[ "$cmd" == "--help" ]]; then
+    usage
+    [[ -z "$cmd" ]] && exit 1 || exit 0
+  fi
+  
   shift || true
 
   case "$cmd" in

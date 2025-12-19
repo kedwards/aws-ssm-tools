@@ -16,6 +16,29 @@ setup() {
 
 # main dispatch tests
 
+@test "bin/ssm shows help with --help" {
+  run ./bin/ssm --help
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Usage: ssm" ]]
+  [[ "$output" =~ "Commands:" ]]
+  [[ "$output" =~ "login" ]]
+  [[ "$output" =~ "connect" ]]
+  [[ "$output" =~ "list" ]]
+  [[ "$output" =~ "kill" ]]
+}
+
+@test "bin/ssm shows help with -h" {
+  run ./bin/ssm -h
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Usage: ssm" ]]
+}
+
+@test "bin/ssm with no command shows help and exits with error" {
+  run ./bin/ssm
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "Usage: ssm" ]]
+}
+
 @test "bin/ssm list runs successfully" {
   run ./bin/ssm list
   [ "$status" -eq 0 ]
