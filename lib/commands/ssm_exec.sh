@@ -71,11 +71,62 @@ ssm_exec() {
   choose_profile_and_region || return 1
   aws_assume_profile "$PROFILE" "$REGION" || return 1
 
-  # TODO: Instance expansion and selection will be implemented in Step 15
+  # Expand instances
+  local instance_ids=()
+
+  if [[ -n "${INSTANCES_ARG:-}" ]]; then
+    # Explicit instances via -i flag (semicolon-separated)
+    IFS=';' read -ra instance_names <<<"$INSTANCES_ARG"
+    local name
+    for name in "${instance_names[@]}"; do
+      name="$(echo "$name" | xargs)"  # Trim whitespace
+      [[ -z "$name" ]] && continue
+      mapfile -t expanded_ids < <(aws_expand_instances "$name")
+      if [[ ${#expanded_ids[@]} -eq 0 ]]; then
+        log_warn "No running instance found matching: $name"
+      else
+        instance_ids+=("${expanded_ids[@]}")
+      fi
+    done
+  else
+    # Interactive selection
+    aws_get_all_running_instances ""
+    if [[ ${#INSTANCE_LIST[@]} -eq 0 ]]; then
+      log_error "No running instances found"
+      return 1
+    fi
+
+    local selections
+    local ret
+    menu_select_many "Select instances for SSM command" selections "${INSTANCE_LIST[@]}"
+    ret=$?
+    if [[ $ret -ne 0 ]]; then
+      return $ret
+    fi
+
+    if [[ -z "${selections:-}" ]]; then
+      log_error "No instances selected"
+      return 1
+    fi
+
+    # Extract instance IDs from selections (format: "Name i-xxxxx")
+    local line
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      instance_ids+=("${line##* }")
+    done <<<"$selections"
+  fi
+
+  if [[ ${#instance_ids[@]} -eq 0 ]]; then
+    log_error "No valid instances found"
+    return 1
+  fi
+
+  log_info "Sending command to ${#instance_ids[@]} instance(s)"
+
   # TODO: AWS send-command will be implemented in Step 16
   # TODO: Polling will be implemented in Step 17
   # TODO: Output display will be implemented in Step 18
 
-  log_info "ssm_exec skeleton ready - instance handling coming in Step 15"
   return 0
 }
