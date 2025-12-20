@@ -100,6 +100,7 @@ ssm_exec() {
 
     if [[ -z "${selections:-}" ]]; then
       log_error "No instances selected"
+      log_error "Hint: Use Tab or Space to mark instances, then press Enter"
       return 1
     fi
 

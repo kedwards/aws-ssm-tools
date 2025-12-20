@@ -43,8 +43,8 @@ guard_function_override menu_select_many || menu_select_many() {
         fzf \
           --multi \
           --prompt="${prompt}: " \
-          --header="$header" \
-          --height=~50% \
+          --header="$header (Tab to select, Enter to confirm)" \
+          --height=50% \
           --reverse \
           --exit-0 \
           --ansi \
