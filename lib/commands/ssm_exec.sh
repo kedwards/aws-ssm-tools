@@ -240,6 +240,8 @@ EOF
       printf "│ %-67s │\n" "Instance: $instance_name"
     fi
     printf "│ %-67s │\n" "ID: $inst"
+    printf "│ %-67s │\n" "Profile: $current_profile"
+    printf "│ %-67s │\n" "Region: $current_region"
     printf "│ %-67s │\n" "Status: $status"
     echo "└─────────────────────────────────────────────────────────────────────┘"
     
