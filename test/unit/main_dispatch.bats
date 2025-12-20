@@ -21,7 +21,6 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Usage: ssm" ]]
   [[ "$output" =~ "Commands:" ]]
-  [[ "$output" =~ "login" ]]
   [[ "$output" =~ "connect" ]]
   [[ "$output" =~ "exec" ]]
   [[ "$output" =~ "list" ]]

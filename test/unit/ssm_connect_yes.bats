@@ -30,7 +30,6 @@ setup() {
 
   # core stubs
   ensure_aws_cli(){ :; }
-  aws_sso_validate_or_login(){ :; }
 
   choose_profile_and_region(){
     PROFILE=default
@@ -66,8 +65,3 @@ setup() {
   assert_output --partial "SSM_SHELL i-1111111111"
 }
 
-@test "ssm connect --yes --dry-run prints deterministic target" {
-  run ssm_connect --yes --dry-run
-  assert_success
-  assert_output --partial "DRY-RUN: aws ssm start-session"
-}

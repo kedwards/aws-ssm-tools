@@ -44,11 +44,6 @@ aws_ssm_config_get() {
   ' "$file"
 }
 
-aws_sso_validate_or_login() {
-  # stub for now
-  return 0
-}
-
 choose_profile_and_region() {
   # profile
   if [[ -z "${PROFILE:-}" ]]; then

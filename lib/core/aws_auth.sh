@@ -25,7 +25,6 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
   if ! (aws_auth_is_valid || aws_auth_detected); then
     log_error "No AWS credentials found"
     log_error "Authenticate first with: assume <profile> -r <region>"
-    log_error "Or run: ssm login"
     return 1
   fi
 
