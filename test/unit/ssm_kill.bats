@@ -27,6 +27,12 @@ setup() {
       # Check if PID exists (for kill verification)
       return 1  # Process doesn't exist
     fi
+    if [[ "$1" == "-o" && "$2" == "ppid=" ]]; then
+      # Return parent PID (one more than child for testing)
+      local child_pid="${4:-}"
+      echo "$((child_pid + 10000))"
+      return 0
+    fi
     command ps "$@"
   }
   export -f ps
@@ -78,10 +84,9 @@ teardown() {
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-abc123
 EOF
 
-  # Mock menu_select_many to return a selection
+  # Mock menu_select_many to return a selection (output to stdout)
   menu_select_many() {
-    local result_var="$3"
-    printf -v "$result_var" '%s' "PID: 12345 | Interactive Shell | Instance: i-abc123"
+    printf '%s' "PID: 22345|12345 | Interactive Shell | Instance: i-abc123"
     return 0
   }
   export -f menu_select_many
@@ -93,8 +98,9 @@ EOF
   
   run ssm_kill
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Killing SSM session PID: 12345" ]]
+  [[ "$output" =~ "Killing SSM session (PIDs: 22345, 12345)" ]]
   killed=$(cat "$KILL_LOG")
+  [[ "$killed" =~ "22345" ]]
   [[ "$killed" =~ "12345" ]]
 }
 
@@ -104,8 +110,7 @@ user     99999  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager
 EOF
 
   menu_select_many() {
-    local result_var="$3"
-    printf -v "$result_var" '%s' "PID: 99999 | Interactive Shell | Instance: i-test"
+    printf '%s' "PID: 109999|99999 | Interactive Shell | Instance: i-test"
     return 0
   }
   export -f menu_select_many
@@ -118,6 +123,7 @@ EOF
   run ssm_kill
   [ "$status" -eq 0 ]
   killed=$(cat "$KILL_LOG")
+  [[ "$killed" =~ "SIGTERM:109999" ]]
   [[ "$killed" =~ "SIGTERM:99999" ]]
 }
 
@@ -138,7 +144,7 @@ EOF
   source ./lib/commands/ssm_kill.sh
   
   run ssm_kill
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
   [ ! -s "$KILL_LOG" ]  # File should be empty
 }
 
@@ -148,8 +154,7 @@ user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager
 EOF
 
   menu_select_many() {
-    local result_var="$3"
-    printf -v "$result_var" '%s' ""
+    printf '%s' ""
     return 0
   }
   export -f menu_select_many
@@ -172,8 +177,7 @@ user     22222  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager
 EOF
 
   menu_select_many() {
-    local result_var="$3"
-    printf -v "$result_var" '%s\n%s' "PID: 11111 | Interactive Shell | Instance: i-aaa" "PID: 22222 | Interactive Shell | Instance: i-bbb"
+    printf '%s\n%s' "PID: 21111|11111 | Interactive Shell | Instance: i-aaa" "PID: 32222|22222 | Interactive Shell | Instance: i-bbb"
     return 0
   }
   export -f menu_select_many
@@ -185,8 +189,8 @@ EOF
   
   run ssm_kill
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "PID: 11111" ]]
-  [[ "$output" =~ "PID: 22222" ]]
+  [[ "$output" =~ "(PIDs: 21111, 11111)" ]]
+  [[ "$output" =~ "(PIDs: 32222, 22222)" ]]
   kill_count=$(wc -l < "$KILL_LOG")
-  [ "$kill_count" -eq 2 ]
+  [ "$kill_count" -eq 4 ]  # 2 parents + 2 children
 }

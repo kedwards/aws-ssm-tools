@@ -26,10 +26,14 @@ ssm_kill() {
   local session_list=()
   local line
   for line in "${sessions[@]}"; do
-    local pid target host port session_type instance_name profile region
+    local pid ppid target host port session_type instance_name profile region
     
-    # Extract PID
+    # Extract PID (session-manager-plugin child process)
     pid=$(awk '{print $2}' <<<"$line")
+    
+    # Get parent PID (the 'aws ssm start-session' command)
+    ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ' || echo "")
+    [[ -z "$ppid" ]] && ppid="$pid"  # Fallback to child if parent lookup fails
     
     # Extract profile from environment
     profile=$(echo "$line" | grep -oP 'AWS_PROFILE=\K[^ ]+' | head -n1)
@@ -81,18 +85,21 @@ ssm_kill() {
       profile_display=" | Profile: $profile"
     fi
     
-    # Add to list
+    # Add to list (store both PIDs: parent|child for killing entire tree)
     if [[ -n "$instance_name" && "$instance_name" != "None" ]]; then
-      session_list+=("PID: $pid | $session_type | Instance: $instance_name (${target:-unknown})${region_display}${profile_display}")
+      session_list+=("PID: $ppid|$pid | $session_type | Instance: $instance_name (${target:-unknown})${region_display}${profile_display}")
     else
-      session_list+=("PID: $pid | $session_type | Instance: ${target:-unknown}${region_display}${profile_display}")
+      session_list+=("PID: $ppid|$pid | $session_type | Instance: ${target:-unknown}${region_display}${profile_display}")
     fi
   done
 
   # Interactive multi-select
   local selected
-  if ! menu_select_many "Select SSM sessions to kill" "Use TAB to select multiple, ENTER to confirm" selected "${session_list[@]}"; then
-    return 0
+  selected=$(menu_select_many "Select SSM sessions to kill" "Use TAB to select multiple, ENTER to confirm" unused "${session_list[@]}")
+  local ret=$?
+  
+  if [[ $ret -ne 0 ]]; then
+    return $ret
   fi
 
   if [[ -z "${selected:-}" ]]; then
@@ -104,20 +111,53 @@ ssm_kill() {
   while IFS= read -r sel; do
     [[ -z "$sel" ]] && continue
     
-    local pid
-    pid=$(grep -oP 'PID: \K[0-9]+' <<<"$sel" || true)
+    # Extract PIDs (format: "PID: parent|child | ...")
+    local pids
+    pids=$(grep -oP 'PID: \K[0-9|]+' <<<"$sel" || true)
     
-    if [[ -n "$pid" ]]; then
-      echo "Killing SSM session PID: $pid"
-      if kill "$pid" 2>/dev/null; then
-        sleep 0.5
-        if ps -p "$pid" >/dev/null 2>&1; then
-          echo "  Process still running, forcing kill..."
-          kill -9 "$pid" 2>/dev/null || log_error "Failed to force kill PID $pid"
-        fi
-        log_info "Session $pid terminated"
+    if [[ -n "$pids" ]]; then
+      # Split parent|child
+      local parent_pid="${pids%%|*}"
+      local child_pid="${pids##*|}"
+      
+      echo "Killing SSM session (PIDs: $parent_pid, $child_pid)"
+      
+      # Kill parent first (the 'aws ssm start-session' command)
+      if kill "$parent_pid" 2>/dev/null; then
+        sleep 0.2
       else
-        log_error "Failed to kill PID $pid"
+        log_warn "Failed to kill parent process $parent_pid (may already be terminated)"
+      fi
+      
+      # Kill child (the session-manager-plugin)
+      if kill "$child_pid" 2>/dev/null; then
+        sleep 0.2
+      else
+        log_warn "Failed to kill child process $child_pid (may already be terminated)"
+      fi
+      
+      # Force kill if still running
+      sleep 0.3
+      if ps -p "$parent_pid" >/dev/null 2>&1; then
+        echo "  Parent process still running, forcing kill..."
+        kill -9 "$parent_pid" 2>/dev/null || true
+      fi
+      
+      if ps -p "$child_pid" >/dev/null 2>&1; then
+        echo "  Child process still running, forcing kill..."
+        kill -9 "$child_pid" 2>/dev/null || true
+      fi
+      
+      # Verify termination
+      local still_running=false
+      if ps -p "$parent_pid" >/dev/null 2>&1 || ps -p "$child_pid" >/dev/null 2>&1; then
+        still_running=true
+      fi
+      
+      if [[ "$still_running" == true ]]; then
+        log_error "Failed to terminate session (PIDs: $parent_pid, $child_pid)"
+      else
+        log_info "Session terminated (PIDs: $parent_pid, $child_pid)"
       fi
     fi
   done <<<"$selected"

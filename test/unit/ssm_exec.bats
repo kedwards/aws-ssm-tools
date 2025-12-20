@@ -223,7 +223,7 @@ source ./lib/commands/ssm_exec.sh
   assert_success
 }
 
-@test "ssm_exec expands multiple semicolon-separated instances" {
+@test "ssm_exec expands multiple comma-separated instances" {
   aws_expand_instances() {
     case "$1" in
       "Report") echo "i-abc123" ;;
@@ -232,7 +232,7 @@ source ./lib/commands/ssm_exec.sh
     return 0
   }
   COMMAND_ARG="uptime"
-  INSTANCES_ARG="Report;Singleton"
+  INSTANCES_ARG="Report,Singleton"
   PROFILE="test-profile"
   REGION="us-east-1"
   
@@ -250,7 +250,7 @@ source ./lib/commands/ssm_exec.sh
     return 0
   }
   COMMAND_ARG="uptime"
-  INSTANCES_ARG=" Report ; Singleton "
+  INSTANCES_ARG=" Report , Singleton "
   PROFILE="test-profile"
   REGION="us-east-1"
   
@@ -283,8 +283,8 @@ source ./lib/commands/ssm_exec.sh
     INSTANCE_LIST=("web-server i-abc123" "db-server i-def456")
   }
   menu_select_many() {
-    eval "$3='web-server i-abc123'"
     echo "menu_select_many_called"
+    printf '%s' "web-server i-abc123"
     return 0
   }
   COMMAND_ARG="uptime"
@@ -334,7 +334,7 @@ source ./lib/commands/ssm_exec.sh
     INSTANCE_LIST=("web-server i-abc123")
   }
   menu_select_many() {
-    eval "$3=''"
+    printf '%s' ""
     return 0
   }
   COMMAND_ARG="uptime"
@@ -352,9 +352,8 @@ source ./lib/commands/ssm_exec.sh
     INSTANCE_LIST=("web-server i-abc123" "db-server i-def456")
   }
   menu_select_many() {
-    # Simulate multi-line selection
-    eval "$3='web-server i-abc123
-db-server i-def456'"
+    # Simulate multi-line selection (output to stdout)
+    printf '%s\n%s' "web-server i-abc123" "db-server i-def456"
     return 0
   }
   COMMAND_ARG="uptime"
@@ -372,7 +371,7 @@ db-server i-def456'"
     return 0  # No output
   }
   COMMAND_ARG="uptime"
-  INSTANCES_ARG="BadName1;BadName2"
+  INSTANCES_ARG="BadName1,BadName2"
   PROFILE="test-profile"
   REGION="us-east-1"
   
