@@ -167,23 +167,38 @@ EOF
   local current_profile="${AWS_PROFILE:-unknown}"
   local current_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-unknown}}"
   
-  echo ""
-  echo "═══════════════════════════════════════════════════════════════════"
-  echo "  SSM COMMAND EXECUTION"
-  echo "═══════════════════════════════════════════════════════════════════"
-  echo "Account:     $account_id"
-  echo "Profile:     $current_profile"
-  echo "Region:      $current_region"
-  echo "Command:     $COMMAND_ARG"
-  echo "Command ID:  $cmd_id"
-  echo "Instances:   ${#instance_ids[@]}"
-  echo "═══════════════════════════════════════════════════════════════════"
-  echo ""
+  # Setup log file
+  local log_dir="${HOME}/.local/share/aws-ssm-tools/logs"
+  mkdir -p "$log_dir"
+  local timestamp=$(date +%Y%m%d_%H%M%S)
+  local log_file="${log_dir}/${current_profile}_${current_region}_${timestamp}.log"
+  
+  # Function to log and display
+  log_output() {
+    tee -a "$log_file"
+  }
+  
+  # Write header to both screen and log
+  {
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo "  SSM COMMAND EXECUTION"
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo "Account:     $account_id"
+    echo "Profile:     $current_profile"
+    echo "Region:      $current_region"
+    echo "Command:     $COMMAND_ARG"
+    echo "Command ID:  $cmd_id"
+    echo "Instances:   ${#instance_ids[@]}"
+    echo "Log file:    $log_file"
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo ""
+  } | log_output
   
   local n_instances="${#instance_ids[@]}"
 
   # Poll for completion
-  log_info "Waiting for command completion..."
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] Waiting for command completion..." | log_output
   while true; do
     local finished=0
     local inst
@@ -196,7 +211,7 @@ EOF
         --output text 2>/dev/null | tr 'A-Z' 'a-z')
       local now
       now=$(date +%H:%M:%S)
-      echo "  [$now] $inst: $status"
+      echo "  [$now] $inst: $status" | log_output
       case "$status" in
         pending|inprogress|delayed) : ;;
         *) finished=$((finished+1)) ;;
@@ -205,11 +220,11 @@ EOF
     [[ $finished -ge $n_instances ]] && break
     sleep 2
   done
-  echo ""
+  echo "" | log_output
 
   # Display results
-  log_info "Command execution completed"
-  echo ""
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] Command execution completed" | log_output
+  echo "" | log_output
   
   for inst in "${instance_ids[@]}"; do
     local status out err instance_name
@@ -232,43 +247,49 @@ EOF
     instance_name="${instance_name_map[$inst]:-}"
     
     # Header
-    echo "┌─────────────────────────────────────────────────────────────────────┐"
-    if [[ -n "$instance_name" ]]; then
-      printf "│ %-67s │\n" "Instance: $instance_name"
-    fi
-    printf "│ %-67s │\n" "ID: $inst"
-    printf "│ %-67s │\n" "Profile: $current_profile"
-    printf "│ %-67s │\n" "Region: $current_region"
-    printf "│ %-67s │\n" "Status: $status"
-    echo "└─────────────────────────────────────────────────────────────────────┘"
-    
-    # Output
-    if [[ -n "$out" ]]; then
-      echo "┌─ STDOUT ────────────────────────────────────────────────────────────┐"
-      echo "$out"
-      echo "└─────────────────────────────────────────────────────────────────────┘"
-    fi
-    
-    # Errors
-    if [[ -n "$err" ]]; then
-      echo "┌─ STDERR ────────────────────────────────────────────────────────────┐"
-      echo "$err"
-      echo "└─────────────────────────────────────────────────────────────────────┘"
-    fi
-    
-    # No output
-    if [[ -z "$out" && -z "$err" ]]; then
+    {
       echo "┌─────────────────────────────────────────────────────────────────────┐"
-      printf "│ %-67s │\n" "No output returned"
+      if [[ -n "$instance_name" ]]; then
+        printf "│ %-67s │\n" "Instance: $instance_name"
+      fi
+      printf "│ %-67s │\n" "ID: $inst"
+      printf "│ %-67s │\n" "Profile: $current_profile"
+      printf "│ %-67s │\n" "Region: $current_region"
+      printf "│ %-67s │\n" "Status: $status"
       echo "└─────────────────────────────────────────────────────────────────────┘"
-    fi
-    
-    echo ""
+      
+      # Output
+      if [[ -n "$out" ]]; then
+        echo "┌─ STDOUT ────────────────────────────────────────────────────────────┐"
+        echo "$out"
+        echo "└─────────────────────────────────────────────────────────────────────┘"
+      fi
+      
+      # Errors
+      if [[ -n "$err" ]]; then
+        echo "┌─ STDERR ────────────────────────────────────────────────────────────┐"
+        echo "$err"
+        echo "└─────────────────────────────────────────────────────────────────────┘"
+      fi
+      
+      # No output
+      if [[ -z "$out" && -z "$err" ]]; then
+        echo "┌─────────────────────────────────────────────────────────────────────┐"
+        printf "│ %-67s │\n" "No output returned"
+        echo "└─────────────────────────────────────────────────────────────────────┘"
+      fi
+      
+      echo ""
+    } | log_output
   done
   
-  echo "═══════════════════════════════════════════════════════════════════"
-  echo "  Execution complete for ${#instance_ids[@]} instance(s)"
-  echo "═══════════════════════════════════════════════════════════════════"
+  {
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo "  Execution complete for ${#instance_ids[@]} instance(s)"
+    echo "═══════════════════════════════════════════════════════════════════"
+  } | log_output
+  
+  log_info "Output logged to: $log_file"
 
   return 0
 }
