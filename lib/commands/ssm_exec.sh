@@ -67,10 +67,8 @@ ssm_exec() {
   declare -A instance_name_map  # Map instance ID to name
 
   if [[ -n "${INSTANCES_ARG:-}" ]]; then
-    # Explicit instances via -i flag (comma or semicolon-separated)
-    # Replace commas with semicolons for consistent parsing
-    local instances_normalized="${INSTANCES_ARG//,/;}"
-    IFS=';' read -ra instance_names <<<"$instances_normalized"
+    # Explicit instances via -i flag (comma-separated)
+    IFS=',' read -ra instance_names <<<"$INSTANCES_ARG"
     local name
     for name in "${instance_names[@]}"; do
       name="$(echo "$name" | xargs)"  # Trim whitespace
