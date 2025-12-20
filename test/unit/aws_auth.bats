@@ -51,7 +51,6 @@ setup() {
 
   # flags defaults
   SHOW_HELP=false
-  DRY_RUN=false
 
   # load auth code
   source ./lib/core/aws_auth.sh
@@ -167,17 +166,6 @@ teardown() {
   assert_success
 }
 
-@test "aws_auth_assume is skipped during dry-run" {
-  DRY_RUN=true
-
-  aws() {
-    echo "SHOULD NOT RUN"
-    return 1
-  }
-
-  run aws_auth_assume default us-west-2
-  assert_success
-}
 
 @test "aws_auth_assume is skipped during help" {
   SHOW_HELP=true

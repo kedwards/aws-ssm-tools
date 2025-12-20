@@ -10,7 +10,6 @@ setup() {
   source ./lib/core/flags.sh
 
   # Reset global flags
-  DRY_RUN=false
   CONFIG_MODE=false
   SHOW_HELP=false
   PROFILE=""
@@ -92,10 +91,3 @@ setup() {
   assert_failure
 }
 
-@test "ssm connect --dry-run does not require AWS" {
-  DRY_RUN=true
-  run ssm_connect
-
-  assert_success
-  assert_output --partial "DRY-RUN: aws ssm start-session"
-}

@@ -16,12 +16,9 @@ Options:
   -r, --region REGION
   -c, --config           Config-based port forwarding
   -f, --file FILE        Config file override
-  -n, --dry-run          Show what would be executed, do not run
   -h, --help
 EOF
 }
-
-DRY_RUN=false
 
 ssm_connect() {
   parse_common_flags "$@" || return 1
@@ -29,16 +26,6 @@ ssm_connect() {
   if [[ "$SHOW_HELP" == true ]]; then
     ssm_connect_usage
     return 0
-  fi
-
-  # DRY-RUN: skip auth entirely
-  if [[ "$DRY_RUN" == true ]]; then
-    if [[ "$CONFIG_MODE" == true ]]; then
-      ssm_connect_config_mode
-    else
-      ssm_connect_shell_mode
-    fi
-    return $?
   fi
 
   if [[ "$CONFIG_MODE" == true ]]; then
@@ -53,7 +40,6 @@ ssm_connect_shell_mode() {
   [[ -z "$target" && ${#POSITIONAL[@]} -gt 0 ]] && target="${POSITIONAL[0]}"
 
   if non_interactive_mode \
-    && [[ "$DRY_RUN" != true ]] \
     && [[ -z "${INSTANCES_ARG:-}" ]] \
     && [[ "${MENU_ASSUME_FIRST:-0}" != "1" ]]; then
     log_error "Instance selection requires interaction"
@@ -63,15 +49,6 @@ ssm_connect_shell_mode() {
 
   #  Skip auth entirely in help
   [[ "${SHOW_HELP:-false}" == true ]] && return 0
-
-  if [[ "$DRY_RUN" == true ]]; then
-    if [[ "$target" == i-* ]]; then
-      echo "DRY-RUN: aws ssm start-session --target $target"
-    else
-      echo "DRY-RUN: aws ssm start-session --target <instance-id>"
-    fi
-    return 0
-  fi
 
   local instance instance_name instance_id
   instance=$(aws_ec2_select_instance "Select instance to connect to" "$target") || return 130
@@ -139,13 +116,6 @@ ssm_connect_config_mode() {
   local instance
   instance=$(aws_ec2_select_instance "Select instance" "$name") || return 130
   local instance_id="${instance##* }"
-
-  if [[ "$DRY_RUN" == true ]]; then
-    echo "DRY-RUN: aws ssm start-session --target $instance_id \\"
-    echo "  --document-name AWS-StartPortForwardingSessionToRemoteHost \\"
-    echo "  --parameters host=$host port=$port local=$local_port"
-    return 0
-  fi
 
   # log_info "Starting port forward: $instance_name ($instance_id)"
   aws_ssm_start_port_forward "$instance_id" "$host" "$port" "$local_port" &

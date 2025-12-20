@@ -14,7 +14,6 @@ load '../helpers/bats-assert/load'
 setup() {
   log_error(){ echo "$*" >&2; }
   export MENU_NON_INTERACTIVE=1
-  export DRY_RUN=false
 
   # AWS stub
   aws() { return 1; }

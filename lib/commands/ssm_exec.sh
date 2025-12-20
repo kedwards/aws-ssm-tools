@@ -16,7 +16,6 @@ Note: You must authenticate with AWS before running this command.
 Options:
   -c <command>      Command to execute on the instances
   -i <instances>    Instance names or IDs (comma or semicolon-separated)
-  -n, --dry-run     Show what would be executed without running
   -y, --yes         Non-interactive mode (auto-select first option)
   -h, --help        Show this help message
 

@@ -10,7 +10,6 @@ setup() {
   unset -f parse_common_flags || true
 
   # Reset globals
-  DRY_RUN=false
   CONFIG_MODE=false
   SHOW_HELP=false
   PROFILE=""
@@ -24,7 +23,6 @@ setup() {
 
 teardown() {
   # Ensure no leakage to other test files
-  DRY_RUN=false
   CONFIG_MODE=false
   SHOW_HELP=false
   PROFILE=""
@@ -32,11 +30,6 @@ teardown() {
   COMMAND_ARG=""
   INSTANCES_ARG=""
   POSITIONAL=()
-}
-
-@test "parse_common_flags sets DRY_RUN" {
-  parse_common_flags --dry-run
-  [ "$DRY_RUN" = true ]
 }
 
 @test "parse_common_flags sets CONFIG_MODE with --config" {
@@ -51,9 +44,8 @@ teardown() {
 }
 
 @test "parse_common_flags handles mixed flags and args" {
-  parse_common_flags --dry-run -p test foo bar
+  parse_common_flags -p test foo bar
 
-  [ "$DRY_RUN" = true ]
   [ "$PROFILE" = "test" ]
   [ "${POSITIONAL[0]}" = "foo" ]
   [ "${POSITIONAL[1]}" = "bar" ]

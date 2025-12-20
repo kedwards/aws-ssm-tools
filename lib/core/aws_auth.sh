@@ -18,9 +18,8 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
   local profile="${1:-${PROFILE:-}}"
   local region="${2:-${REGION:-}}"
 
-  # Never authenticate during help or dry-run
+  # Never authenticate during help
   [[ "${SHOW_HELP:-false}" == true ]] && return 0
-  [[ "${DRY_RUN:-false}" == true ]] && return 0
 
   # Check if already authenticated
   if ! (aws_auth_is_valid || aws_auth_detected); then

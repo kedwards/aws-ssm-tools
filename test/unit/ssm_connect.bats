@@ -10,7 +10,6 @@ load '../helpers/bats-assert/load'
 
 setup() {
   # Reset global flags
-  DRY_RUN=false
   CONFIG_MODE=false
   SHOW_HELP=false
   PROFILE=""
@@ -55,24 +54,11 @@ setup() {
   export MENU_NON_INTERACTIVE=1
   export MENU_ASSUME_FIRST=1
   export CONFIG_MODE=false
-  export DRY_RUN=false
 
   run ssm_connect
 
   assert_success
   assert_output --partial "SSM_SHELL i-1234567890"
-}
-
-@test "ssm connect shell mode dry-run prints command" {
-  export MENU_NON_INTERACTIVE=0
-  export MENU_ASSUME_FIRST=1
-  export CONFIG_MODE=false
-  export DRY_RUN=true
-
-  run ssm_connect
-
-  assert_success
-  assert_output --partial "DRY-RUN: aws ssm start-session --target <instance-id>"
 }
 
 @test "ssm connect --help does not require AWS" {
@@ -86,15 +72,4 @@ setup() {
   assert_output --partial "Usage: ssm connect"
 }
 
-@test "ssm connect --dry-run does not call AWS helpers" {
-  DRY_RUN=true
-
-  choose_profile_and_region() { echo "SHOULD NOT RUN"; return 1; }
-  ensure_aws_cli() { echo "SHOULD NOT RUN"; return 1; }
-
-  run ssm_connect
-
-  assert_success
-  assert_output --partial "DRY-RUN: aws ssm start-session"
-}
 

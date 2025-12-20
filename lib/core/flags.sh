@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # global defaults 
-DRY_RUN=false
 SHOW_HELP=false
 CONFIG_MODE=false
 ASSUME_YES=false
@@ -18,10 +17,6 @@ parse_common_flags() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -n|--dry-run)
-        DRY_RUN=true
-        shift
-        ;;
       -c|--command)
         COMMAND_ARG="$2"
         shift 2
