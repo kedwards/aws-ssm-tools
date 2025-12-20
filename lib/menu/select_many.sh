@@ -87,6 +87,7 @@ guard_function_override menu_select_many || menu_select_many() {
     PS3="$old_ps3"
   fi
 
-  printf -v "$__result_var" '%s\n' "${selections[@]}"
+  # Output selections to stdout (one per line)
+  printf '%s\n' "${selections[@]}"
   return 0
 }

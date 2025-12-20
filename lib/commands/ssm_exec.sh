@@ -91,9 +91,9 @@ ssm_exec() {
     fi
 
     local selections
-    local ret
-    menu_select_many "Select instances for SSM command" "" selections "${INSTANCE_LIST[@]}"
-    ret=$?
+    selections=$(menu_select_many "Select instances for SSM command" "" unused "${INSTANCE_LIST[@]}")
+    local ret=$?
+    
     if [[ $ret -ne 0 ]]; then
       return $ret
     fi
@@ -151,10 +151,28 @@ EOF
     return 1
   fi
 
-  log_info "Command launched with ID: $cmd_id"
+  # Get account info
+  local account_id=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "unknown")
+  local current_profile="${AWS_PROFILE:-unknown}"
+  local current_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-unknown}}"
+  
+  echo ""
+  echo "═══════════════════════════════════════════════════════════════════"
+  echo "  SSM COMMAND EXECUTION"
+  echo "═══════════════════════════════════════════════════════════════════"
+  echo "Account:     $account_id"
+  echo "Profile:     $current_profile"
+  echo "Region:      $current_region"
+  echo "Command:     $COMMAND_ARG"
+  echo "Command ID:  $cmd_id"
+  echo "Instances:   ${#instance_ids[@]}"
+  echo "═══════════════════════════════════════════════════════════════════"
+  echo ""
+  
   local n_instances="${#instance_ids[@]}"
 
   # Poll for completion
+  log_info "Waiting for command completion..."
   while true; do
     local finished=0
     local inst
@@ -166,8 +184,8 @@ EOF
         --query Status \
         --output text 2>/dev/null | tr 'A-Z' 'a-z')
       local now
-      now=$(date +%Y-%m-%dT%H:%M:%S%z)
-      echo "$now $inst: $status"
+      now=$(date +%H:%M:%S)
+      echo "  [$now] $inst: $status"
       case "$status" in
         pending|inprogress|delayed) : ;;
         *) finished=$((finished+1)) ;;
@@ -176,39 +194,71 @@ EOF
     [[ $finished -ge $n_instances ]] && break
     sleep 2
   done
+  echo ""
 
   # Display results
+  log_info "Command execution completed"
+  echo ""
+  
   for inst in "${instance_ids[@]}"; do
-    local status out err
+    local status out err instance_name
+    
+    # Get status and output
     status=$(aws ssm get-command-invocation \
       --command-id "$cmd_id" \
       --instance-id "$inst" \
-      --query Status --output text) || true
+      --query Status --output text 2>/dev/null) || status="Unknown"
     out=$(aws ssm get-command-invocation \
       --command-id "$cmd_id" \
       --instance-id "$inst" \
-      --query StandardOutputContent --output text) || true
+      --query StandardOutputContent --output text 2>/dev/null) || out=""
     err=$(aws ssm get-command-invocation \
       --command-id "$cmd_id" \
       --instance-id "$inst" \
-      --query StandardErrorContent --output text) || true
-
-    echo "------------------------------------"
-    echo "RESULTS FROM $inst (STATUS $status):"
-    [[ -n "$out" ]] && {
-      echo "STDOUT:"
-      echo "$out"
-      echo "------------------------------------"
-    }
-    [[ -n "$err" ]] && {
-      echo "STDERR:"
-      echo "$err"
-      echo "------------------------------------"
-    }
-    if [[ -z "$out" && -z "$err" ]]; then
-      echo "NO OUTPUT RETURNED"
+      --query StandardErrorContent --output text 2>/dev/null) || err=""
+    
+    # Get instance name from selections if available
+    instance_name=""
+    if [[ -n "${selections:-}" ]]; then
+      instance_name=$(echo "$selections" | grep "$inst" | sed "s/ $inst$//" || echo "")
     fi
+    
+    # Header
+    echo "┌─────────────────────────────────────────────────────────────────────┐"
+    if [[ -n "$instance_name" ]]; then
+      printf "│ %-67s │\n" "Instance: $instance_name"
+    fi
+    printf "│ %-67s │\n" "ID: $inst"
+    printf "│ %-67s │\n" "Status: $status"
+    echo "└─────────────────────────────────────────────────────────────────────┘"
+    
+    # Output
+    if [[ -n "$out" ]]; then
+      echo "┌─ STDOUT ────────────────────────────────────────────────────────────┐"
+      echo "$out"
+      echo "└─────────────────────────────────────────────────────────────────────┘"
+    fi
+    
+    # Errors
+    if [[ -n "$err" ]]; then
+      echo "┌─ STDERR ────────────────────────────────────────────────────────────┐"
+      echo "$err"
+      echo "└─────────────────────────────────────────────────────────────────────┘"
+    fi
+    
+    # No output
+    if [[ -z "$out" && -z "$err" ]]; then
+      echo "┌─────────────────────────────────────────────────────────────────────┐"
+      printf "│ %-67s │\n" "No output returned"
+      echo "└─────────────────────────────────────────────────────────────────────┘"
+    fi
+    
+    echo ""
   done
+  
+  echo "═══════════════════════════════════════════════════════════════════"
+  echo "  Execution complete for ${#instance_ids[@]} instance(s)"
+  echo "═══════════════════════════════════════════════════════════════════"
 
   return 0
 }
