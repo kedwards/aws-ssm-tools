@@ -5,6 +5,9 @@ set -euo pipefail
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 ROOT_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
+# Version info
+VERSION="$(cat "$ROOT_DIR/VERSION" 2>/dev/null || echo 'dev')"
+
 # Core
 source "$ROOT_DIR/lib/core/logging.sh"
 source "$ROOT_DIR/lib/core/flags.sh"
@@ -41,7 +44,8 @@ Commands:
   kill       Terminate active SSM sessions
 
 Options:
-  -h, --help Show this help message
+  -h, --help     Show this help message
+  -v, --version  Show version information
 
 Run 'ssm <command> --help' for more information on a specific command.
 EOF
@@ -49,6 +53,12 @@ EOF
 
 main() {
   local cmd="${1:-}"
+  
+  # Handle version flag
+  if [[ "$cmd" == "-v" ]] || [[ "$cmd" == "--version" ]]; then
+    echo "aws-ssm-tools version $VERSION"
+    exit 0
+  fi
   
   # Handle help or no command
   if [[ -z "$cmd" ]] || [[ "$cmd" == "-h" ]] || [[ "$cmd" == "--help" ]]; then

@@ -47,6 +47,22 @@ task ci
 ./update.sh
 ```
 
+### Releases
+```bash
+# Show current version
+task version
+
+# Create a new release (interactive)
+task release
+
+# Or create specific release types
+task release:patch   # Bug fixes: 0.1.0 -> 0.1.1
+task release:minor   # New features: 0.1.0 -> 0.2.0
+task release:major   # Breaking changes: 0.1.0 -> 1.0.0
+```
+
+See [RELEASE.md](RELEASE.md) for detailed release documentation.
+
 ## Architecture
 
 ### Code Organization
@@ -182,7 +198,27 @@ Menu behavior:
 
 ## AWS Configuration
 
-The tool uses **Granted** for AWS authentication. Config-based port forwarding uses INI-style config files:
+The tool uses **Granted** for AWS authentication.
+
+### Saved Commands
+
+Commands are loaded from `lib/core/commands.sh` in the following order:
+1. `~/.local/share/aws-ssm-tools/commands.config` - Default commands (installed from `examples/commands.config`)
+2. `~/.config/aws-ssm-tools/commands.user.config` - User custom commands (never overwritten)
+3. `$AWS_SSM_COMMAND_FILE` - Custom path via environment variable
+
+Later files override earlier ones. The installer copies `examples/commands.config` to the default location during install/update.
+
+**Format:**
+```
+# Command format: NAME|Description|Command to execute
+disk-usage|Check disk usage|df -h
+memory-info|Display memory information|free -h
+```
+
+### Port Forwarding
+
+Config-based port forwarding uses INI-style config files:
 
 ```ini
 [my-db]

@@ -1,1 +1,25 @@
+# Test dependencies
 test/helpers/bats-assert
+test/helpers/bats-support
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Release artifacts
+*.tar.gz
+*.zip
+
+# Local testing
+.cache/

@@ -13,25 +13,71 @@ if [[ ! -d "${INSTALL_DIR}" ]]; then
   exit 1
 fi
 
+# Show current version
+CURRENT_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"
+echo "[INFO] Current version: ${CURRENT_VERSION}"
+
+# Parse version argument (defaults to latest release)
+VERSION="${1:-latest}"
+
 echo "[INFO] Updating ${REPO_NAME} in ${INSTALL_DIR}"
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
-echo "[INFO] Downloading latest version..."
-curl -sSL "${REPO_URL}/archive/refs/heads/main.tar.gz" |
-  tar xz -C "$tmpdir"
+# Determine download URL based on version
+if [[ "$VERSION" == "latest" ]]; then
+  # Try to get latest release tag, fallback to main
+  echo "[INFO] Fetching latest release..."
+  LATEST_TAG=$(curl -sSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
+  
+  if [[ -n "$LATEST_TAG" ]]; then
+    echo "[INFO] Downloading ${REPO_NAME} ${LATEST_TAG}..."
+    DOWNLOAD_URL="${REPO_URL}/archive/refs/tags/${LATEST_TAG}.tar.gz"
+    EXTRACTED_DIR="${tmpdir}/${REPO_NAME}-${LATEST_TAG#v}"
+  else
+    echo "[INFO] No releases found, downloading from main branch..."
+    DOWNLOAD_URL="${REPO_URL}/archive/refs/heads/main.tar.gz"
+    EXTRACTED_DIR="${tmpdir}/${REPO_NAME}-main"
+  fi
+elif [[ "$VERSION" == "main" ]] || [[ "$VERSION" == "dev" ]]; then
+  echo "[INFO] Downloading ${REPO_NAME} from main branch..."
+  DOWNLOAD_URL="${REPO_URL}/archive/refs/heads/main.tar.gz"
+  EXTRACTED_DIR="${tmpdir}/${REPO_NAME}-main"
+else
+  # Update to specific version (tag)
+  echo "[INFO] Downloading ${REPO_NAME} ${VERSION}..."
+  DOWNLOAD_URL="${REPO_URL}/archive/refs/tags/${VERSION}.tar.gz"
+  EXTRACTED_DIR="${tmpdir}/${REPO_NAME}-${VERSION#v}"
+fi
 
-EXTRACTED_DIR="${tmpdir}/${REPO_NAME}-main"
+curl -sSL "$DOWNLOAD_URL" | tar xz -C "$tmpdir"
 
 echo "[INFO] Syncing files..."
 rsync -a --delete "${EXTRACTED_DIR}/" "${INSTALL_DIR}/"
 
-# Default commands.config is automatically updated in INSTALL_DIR
+# Update default commands from examples/commands.config
+if [[ -f "${INSTALL_DIR}/examples/commands.config" ]]; then
+  echo "[INFO] Updating default commands..."
+  cp "${INSTALL_DIR}/examples/commands.config" "${INSTALL_DIR}/commands.config"
+else
+  echo "[WARN] examples/commands.config not found, default commands may be outdated"
+fi
+
 # User custom commands in ~/.config/aws-ssm-tools/commands.user.config are preserved
 echo "[INFO] Default commands updated in ${INSTALL_DIR}/commands.config"
 echo "[INFO] User custom commands preserved in ~/.config/${REPO_NAME}/commands.user.config"
 
+# Show new version
+NEW_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"
+
 echo ""
-echo "[SUCCESS] ${REPO_NAME} updated!"
+if [[ "$CURRENT_VERSION" != "$NEW_VERSION" ]]; then
+  echo "[SUCCESS] ${REPO_NAME} updated from v${CURRENT_VERSION} to v${NEW_VERSION}!"
+else
+  echo "[SUCCESS] ${REPO_NAME} v${NEW_VERSION} reinstalled!"
+fi
+echo ""
+echo "To update to a specific version, run:"
+echo "  ./update.sh v0.1.0"
 echo ""

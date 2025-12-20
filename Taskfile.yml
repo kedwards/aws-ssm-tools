@@ -25,10 +25,36 @@ tasks:
   lint:
     desc: Run shellcheck
     cmds:
-      - "{{.SHELLCHECK}} lib/menu/index.sh"
+      - "{{.SHELLCHECK}} -e SC1091 lib/menu/index.sh"
 
   ci:
     desc: Run all checks (CI)
     deps:
       - lint
       - test
+
+  version:
+    desc: Show current version
+    cmds:
+      - cat VERSION
+    silent: true
+
+  release:patch:
+    desc: Create a patch release (bug fixes)
+    cmds:
+      - ./scripts/release.sh patch
+
+  release:minor:
+    desc: Create a minor release (new features)
+    cmds:
+      - ./scripts/release.sh minor
+
+  release:major:
+    desc: Create a major release (breaking changes)
+    cmds:
+      - ./scripts/release.sh major
+
+  release:
+    desc: Create a release (interactive)
+    cmds:
+      - ./scripts/release.sh

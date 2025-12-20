@@ -15,13 +15,34 @@ A Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions with inter
 
 ## Installation
 
+### Latest Release (Recommended)
+
 ```bash
-git clone https://github.com/yourusername/aws-ssm-tools
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash
+```
+
+### Specific Version
+
+```bash
+# Install specific version
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash -s v0.1.0
+```
+
+### From Source (Development)
+
+```bash
+git clone https://github.com/kedwards/aws-ssm-tools
 cd aws-ssm-tools
 ./install.sh
 ```
 
 This installs to `~/.local/share/aws-ssm-tools` with symlinks in `~/.local/bin`.
+
+### Check Version
+
+```bash
+ssm --version
+```
 
 ## Prerequisites
 
@@ -152,10 +173,12 @@ ssm kill --all
 
 ### Saved Commands
 
-Create command files in these locations (checked in order):
-1. `~/.config/ssm/commands.config` (user commands)
-2. `./examples/commands.config` (example commands)
-3. Custom path via `$AWS_SSM_COMMAND_FILE`
+Default commands are installed to `~/.local/share/aws-ssm-tools/commands.config` from `examples/commands.config`.
+
+You can override or add commands in these locations (checked in order):
+1. `~/.local/share/aws-ssm-tools/commands.config` (default commands, updated on install/update)
+2. `~/.config/aws-ssm-tools/commands.user.config` (your custom commands, never overwritten)
+3. Custom path via `$AWS_SSM_COMMAND_FILE` environment variable
 
 **Format:**
 ```
@@ -163,6 +186,17 @@ Create command files in these locations (checked in order):
 disk-usage|Check disk usage|df -h
 memory-info|Display memory information|free -h
 docker-status|Check Docker containers|docker ps -a
+```
+
+**Adding Custom Commands:**
+```bash
+# Create user commands file (will never be overwritten by updates)
+mkdir -p ~/.config/aws-ssm-tools
+cat > ~/.config/aws-ssm-tools/commands.user.config <<'EOF'
+# My custom commands
+my-check|Custom health check|curl http://localhost:8080/health
+restart-app|Restart application|systemctl restart myapp
+EOF
 ```
 
 ### Port Forwarding Config
@@ -205,26 +239,29 @@ ssm connect --config
 - `MENU_NO_FZF` - Force bash `select` instead of fzf
 - `AWS_SSM_COMMAND_FILE` - Custom commands file path
 
-## Installation / Update
+## Updating
 
-One line curl/wget installation or update (recommended)
+Update to the latest release:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
-wget -qO- https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
-
-# or
-
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/update.sh | bash
-wget -qO- https://raw.githubusercontent.com/kedwards/aws-tools/main/update.sh | bash
+~/.local/share/aws-ssm-tools/update.sh
 ```
 
-This installs:
+Update to a specific version:
 
-- toolkit → ~/.local/aws-tools/
-- commands → ~/.local/bin/
+```bash
+~/.local/share/aws-ssm-tools/update.sh v0.1.0
+```
 
-Ensure your PATH includes:
+Update to development version (main branch):
+
+```bash
+~/.local/share/aws-ssm-tools/update.sh main
+```
+
+## PATH Configuration
+
+Ensure `~/.local/bin` is in your PATH:
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
 ```
@@ -262,6 +299,25 @@ shellcheck lib/core/logging.sh
 # Run all checks (lint + unit tests)
 task ci
 ```
+
+### Releases
+
+For maintainers creating releases:
+
+```bash
+# Show current version
+task version
+
+# Create a new release interactively
+task release
+
+# Or create specific release types
+task release:patch   # 0.1.0 -> 0.1.1 (bug fixes)
+task release:minor   # 0.1.0 -> 0.2.0 (new features)
+task release:major   # 0.1.0 -> 1.0.0 (breaking changes)
+```
+
+See [RELEASE.md](RELEASE.md) for detailed release management documentation.
 
 ## Troubleshooting
 
