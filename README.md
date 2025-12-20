@@ -205,6 +205,31 @@ ssm connect --config
 - `MENU_NO_FZF` - Force bash `select` instead of fzf
 - `AWS_SSM_COMMAND_FILE` - Custom commands file path
 
+## Installation / Update
+
+One line curl/wget installation or update (recommended)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
+
+# or
+
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/update.sh | bash
+wget -qO- https://raw.githubusercontent.com/kedwards/aws-tools/main/update.sh | bash
+```
+
+This installs:
+
+- toolkit → ~/.local/aws-tools/
+- commands → ~/.local/bin/
+
+Ensure your PATH includes:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 ## Development
 
 ### Running Tests
