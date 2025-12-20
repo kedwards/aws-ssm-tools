@@ -32,7 +32,7 @@ usage() {
   cat <<EOF
 Usage: ssm <command> [options]
 
-AWS Systems Manager (SSM) session management tool.
+AWS Systems Manager (SSM) session management tool
 
 Commands:
   connect    Start SSM shell session or port forwarding to an instance

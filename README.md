@@ -211,7 +211,6 @@ One line curl/wget installation or update (recommended)
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
 wget -qO- https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
 
 # or
