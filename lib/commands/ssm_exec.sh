@@ -13,8 +13,7 @@ Note: You must authenticate with AWS before running this command.
 
 Options:
   -c <command>      Command to execute on the instances
-  -i <instances>    Instance names or IDs (comma or semicolon-separated)
-  -y, --yes         Non-interactive mode (auto-select first option)
+  -i <instances>    Instance names or IDs (comma-separated for multiple)
   -h, --help        Show this help message
 
 Examples:
