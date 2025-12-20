@@ -39,10 +39,7 @@ This installs to `~/.local/share/aws-ssm-tools` with symlinks in `~/.local/bin`.
 ### 1. Authentication
 
 ```bash
-# Show authentication instructions
-ssm login -p prod -r us-east-1
-
-# Follow the instructions and run:
+# Authenticate
 assume prod -r us-east-1
 
 # Verify authentication
@@ -88,18 +85,6 @@ ssm kill
 ```
 
 ## Commands
-
-### `ssm login`
-Displays authentication instructions for AWS SSO via Granted.
-
-**Options:**
-- `-p, --profile` - AWS profile
-- `-r, --region` - AWS region
-
-**Example:**
-```bash
-ssm login -p production -r us-east-1
-```
 
 ### `ssm connect`
 Start an SSM shell session or port forwarding to an EC2 instance.
@@ -254,42 +239,11 @@ shellcheck lib/core/logging.sh
 task ci
 ```
 
-## Architecture
-
-The codebase follows a layered architecture:
-
-```
-lib/
-├── core/           # Core utilities
-│   ├── logging.sh       # Structured logging
-│   ├── flags.sh         # Flag parsing
-│   ├── aws_auth.sh      # AWS authentication
-│   ├── aws.sh           # AWS helpers
-│   └── commands.sh      # Saved commands
-├── aws/            # AWS-specific modules
-│   ├── ec2.sh           # EC2 instance management
-│   └── ssm.sh           # SSM wrappers
-├── menu/           # Menu system (fzf/fallback)
-└── commands/       # CLI commands
-    ├── ssm_login.sh
-    ├── ssm_connect.sh
-    ├── ssm_exec.sh
-    ├── ssm_list.sh
-    └── ssm_kill.sh
-```
-
-### Key Patterns
-
-- **Test Guard Pattern** - Functions can be overridden for testing
-- **Non-Interactive Mode** - All commands support `--yes` flag
-- **Instance Caching** - 30s TTL to reduce API calls
-- **Dry-Run Mode** - Preview commands without execution
-
 ## Troubleshooting
 
 ### "No AWS credentials found"
 
-Run `ssm login` to see authentication instructions, then run `assume` directly:
+Run `assume` directly:
 ```bash
 assume your-profile -r us-east-1
 ```
