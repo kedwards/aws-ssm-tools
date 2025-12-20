@@ -65,6 +65,7 @@ ssm_exec() {
 
   # Expand instances
   local instance_ids=()
+  declare -A instance_name_map  # Map instance ID to name
 
   if [[ -n "${INSTANCES_ARG:-}" ]]; then
     # Explicit instances via -i flag (comma or semicolon-separated)
@@ -75,11 +76,21 @@ ssm_exec() {
     for name in "${instance_names[@]}"; do
       name="$(echo "$name" | xargs)"  # Trim whitespace
       [[ -z "$name" ]] && continue
-      mapfile -t expanded_ids < <(aws_expand_instances "$name")
-      if [[ ${#expanded_ids[@]} -eq 0 ]]; then
-        log_warn "No running instance found matching: $name"
+      
+      # Check if it's an instance ID or name
+      if [[ "$name" == i-* ]]; then
+        instance_ids+=("$name")
+        instance_name_map["$name"]="$name"  # ID as name for IDs
       else
-        instance_ids+=("${expanded_ids[@]}")
+        mapfile -t expanded_ids < <(aws_expand_instances "$name")
+        if [[ ${#expanded_ids[@]} -eq 0 ]]; then
+          log_warn "No running instance found matching: $name"
+        else
+          for id in "${expanded_ids[@]}"; do
+            instance_ids+=("$id")
+            instance_name_map["$id"]="$name"  # Store the original name
+          done
+        fi
       fi
     done
   else
@@ -104,11 +115,14 @@ ssm_exec() {
       return 1
     fi
 
-    # Extract instance IDs from selections (format: "Name i-xxxxx")
+    # Extract instance IDs and names from selections (format: "Name i-xxxxx")
     local line
     while IFS= read -r line; do
       [[ -z "$line" ]] && continue
-      instance_ids+=("${line##* }")
+      local inst_id="${line##* }"
+      local inst_name="${line% *}"
+      instance_ids+=("$inst_id")
+      instance_name_map["$inst_id"]="$inst_name"
     done <<<"$selections"
   fi
 
@@ -217,11 +231,8 @@ EOF
       --instance-id "$inst" \
       --query StandardErrorContent --output text 2>/dev/null) || err=""
     
-    # Get instance name from selections if available
-    instance_name=""
-    if [[ -n "${selections:-}" ]]; then
-      instance_name=$(echo "$selections" | grep "$inst" | sed "s/ $inst$//" || echo "")
-    fi
+    # Get instance name from map
+    instance_name="${instance_name_map[$inst]:-}"
     
     # Header
     echo "┌─────────────────────────────────────────────────────────────────────┐"
