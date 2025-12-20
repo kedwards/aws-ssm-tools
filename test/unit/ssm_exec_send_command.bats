@@ -142,9 +142,10 @@ source ./lib/commands/ssm_exec.sh
   }
   export aws_log
   export -f aws
+  export -f aws_expand_instances
   
   COMMAND_ARG="uptime"
-  INSTANCES_ARG="Report;Singleton"
+  INSTANCES_ARG="Report,Singleton"
   PROFILE="test"
   REGION="us-east-1"
   

@@ -194,3 +194,164 @@ EOF
   kill_count=$(wc -l < "$KILL_LOG")
   [ "$kill_count" -eq 4 ]  # 2 parents + 2 children
 }
+
+@test "ssm_kill correctly identifies both parent and child PIDs" {
+  cat > "$PS_OUTPUT_FILE" <<'EOF'
+user     54321  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-xyz789
+EOF
+
+  # Mock ps to return specific parent PID
+  ps() {
+    if [[ "$1" == "aux" || "$1" == "eww" ]]; then
+      cat "$PS_OUTPUT_FILE"
+      return 0
+    fi
+    if [[ "$1" == "-o" && "$2" == "ppid=" ]]; then
+      # Return parent PID (64321 for child 54321)
+      echo "64321"
+      return 0
+    fi
+    if [[ "$1" == "-p" ]]; then
+      return 1  # Process doesn't exist after kill
+    fi
+    command ps "$@"
+  }
+  export -f ps
+
+  menu_select_many() {
+    printf '%s' "PID: 64321|54321 | Interactive Shell | Instance: i-xyz789"
+    return 0
+  }
+  export -f menu_select_many
+
+  aws() { return 1; }
+  export -f aws
+
+  source ./lib/commands/ssm_kill.sh
+  
+  run ssm_kill
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Killing SSM session (PIDs: 64321, 54321)" ]]
+  # Verify both PIDs appear in kill log
+  killed=$(cat "$KILL_LOG")
+  [[ "$killed" =~ "64321" ]]  # parent PID
+  [[ "$killed" =~ "54321" ]]  # child PID
+}
+
+@test "ssm_kill attempts to kill both parent and child processes" {
+  cat > "$PS_OUTPUT_FILE" <<'EOF'
+user     77777  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-test123
+EOF
+
+  menu_select_many() {
+    printf '%s' "PID: 87777|77777 | Interactive Shell | Instance: i-test123"
+    return 0
+  }
+  export -f menu_select_many
+
+  aws() { return 1; }
+  export -f aws
+
+  source ./lib/commands/ssm_kill.sh
+  
+  run ssm_kill
+  [ "$status" -eq 0 ]
+  
+  # Verify both parent and child PIDs were killed
+  killed=$(cat "$KILL_LOG")
+  [[ "$killed" =~ "SIGTERM:87777" ]]  # parent should be killed first
+  [[ "$killed" =~ "SIGTERM:77777" ]]  # child should be killed second
+  
+  # Verify we have exactly 2 SIGTERM entries (parent + child)
+  sigterm_count=$(grep -c "SIGTERM" "$KILL_LOG")
+  [ "$sigterm_count" -eq 2 ]
+}
+
+@test "ssm_kill successfully terminates session by killing both processes" {
+  cat > "$PS_OUTPUT_FILE" <<'EOF'
+user     33333  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-complete
+EOF
+
+  # Override log_info to echo output for this test
+  log_info() { echo "$@"; }
+  export -f log_info
+
+  menu_select_many() {
+    printf '%s' "PID: 43333|33333 | Interactive Shell | Instance: i-complete"
+    return 0
+  }
+  export -f menu_select_many
+
+  aws() { return 1; }
+  export -f aws
+
+  source ./lib/commands/ssm_kill.sh
+  
+  run ssm_kill
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Session terminated (PIDs: 43333, 33333)" ]]
+  
+  # Verify no force kill was needed (only SIGTERM, no SIGKILL)
+  killed=$(cat "$KILL_LOG")
+  [[ "$killed" =~ "SIGTERM" ]]
+  [[ ! "$killed" =~ "SIGKILL" ]]
+}
+
+@test "ssm_kill attempts force kill if processes still running after initial termination" {
+  cat > "$PS_OUTPUT_FILE" <<'EOF'
+user     55555  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-stubborn
+EOF
+
+  # Mock ps to indicate processes are still running after SIGTERM
+  ps() {
+    if [[ "$1" == "aux" || "$1" == "eww" ]]; then
+      cat "$PS_OUTPUT_FILE"
+      return 0
+    fi
+    if [[ "$1" == "-o" && "$2" == "ppid=" ]]; then
+      echo "65555"
+      return 0
+    fi
+    if [[ "$1" == "-p" ]]; then
+      local pid="$2"
+      # Check if we've done a SIGKILL for this specific PID
+      if grep -q "SIGKILL:$pid" "$KILL_LOG" 2>/dev/null; then
+        # After SIGKILL, process is gone
+        return 1
+      else
+        # Before SIGKILL, process still exists
+        return 0
+      fi
+    fi
+    command ps "$@"
+  }
+  export -f ps
+
+  menu_select_many() {
+    printf '%s' "PID: 65555|55555 | Interactive Shell | Instance: i-stubborn"
+    return 0
+  }
+  export -f menu_select_many
+
+  aws() { return 1; }
+  export -f aws
+
+  source ./lib/commands/ssm_kill.sh
+  
+  run ssm_kill
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "still running, forcing kill" ]]
+  
+  # Verify SIGTERM was sent first
+  killed=$(cat "$KILL_LOG")
+  [[ "$killed" =~ "SIGTERM:65555" ]]
+  [[ "$killed" =~ "SIGTERM:55555" ]]
+  
+  # Verify SIGKILL (kill -9) was sent after
+  [[ "$killed" =~ "SIGKILL:65555" ]]
+  [[ "$killed" =~ "SIGKILL:55555" ]]
+  
+  # Verify order: SIGTERM before SIGKILL
+  first_signal=$(head -n1 "$KILL_LOG")
+  [[ "$first_signal" =~ "SIGTERM" ]]
+}

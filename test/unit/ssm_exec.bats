@@ -379,3 +379,39 @@ source ./lib/commands/ssm_exec.sh
   
   assert_failure
 }
+
+@test "ssm_exec correctly parses and expands comma-separated instance names" {
+  # Create temp file to track expansion calls
+  EXPAND_LOG="$(mktemp)"
+  
+  aws_expand_instances() {
+    echo "$1" >> "$EXPAND_LOG"
+    case "$1" in
+      "web-server") echo "i-web123" ;;
+      "db-server") echo "i-db456" ;;
+      "cache-server") echo "i-cache789" ;;
+    esac
+    return 0
+  }
+  
+  COMMAND_ARG="uptime"
+  INSTANCES_ARG="web-server,db-server,cache-server"
+  PROFILE="test-profile"
+  REGION="us-east-1"
+  
+  run ssm_exec
+  
+  assert_success
+  
+  # Verify all three instance names were parsed and expanded
+  expanded=$(cat "$EXPAND_LOG")
+  [[ "$expanded" =~ "web-server" ]]
+  [[ "$expanded" =~ "db-server" ]]
+  [[ "$expanded" =~ "cache-server" ]]
+  
+  # Verify we have exactly 3 expansion calls
+  expand_count=$(wc -l < "$EXPAND_LOG")
+  [ "$expand_count" -eq 3 ]
+  
+  rm -f "$EXPAND_LOG"
+}

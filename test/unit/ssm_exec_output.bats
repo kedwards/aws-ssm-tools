@@ -34,6 +34,8 @@ source ./lib/commands/ssm_exec.sh
       elif [[ "$*" =~ "StandardOutputContent" ]]; then
         echo "Hello from instance"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -60,6 +62,8 @@ source ./lib/commands/ssm_exec.sh
       elif [[ "$*" =~ "StandardErrorContent" ]]; then
         echo "Error output"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -84,6 +88,8 @@ source ./lib/commands/ssm_exec.sh
       if [[ "$*" =~ "--query Status" ]]; then
         echo "Success"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -97,8 +103,7 @@ source ./lib/commands/ssm_exec.sh
   run ssm_exec
   
   assert_success
-  assert_output --partial "i-abc123"
-  assert_output --partial "RESULTS FROM"
+  assert_output --partial "ID: i-abc123"
 }
 
 @test "ssm_exec shows status in results header" {
@@ -109,6 +114,8 @@ source ./lib/commands/ssm_exec.sh
       if [[ "$*" =~ "--query Status" ]]; then
         echo "Success"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -122,7 +129,7 @@ source ./lib/commands/ssm_exec.sh
   run ssm_exec
   
   assert_success
-  assert_output --partial "STATUS Success"
+  assert_output --partial "Status: Success"
 }
 
 @test "ssm_exec labels stdout output" {
@@ -135,6 +142,8 @@ source ./lib/commands/ssm_exec.sh
       elif [[ "$*" =~ "StandardOutputContent" ]]; then
         echo "output data"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -148,7 +157,7 @@ source ./lib/commands/ssm_exec.sh
   run ssm_exec
   
   assert_success
-  assert_output --partial "STDOUT:"
+  assert_output --partial "STDOUT"
 }
 
 @test "ssm_exec labels stderr output" {
@@ -161,6 +170,8 @@ source ./lib/commands/ssm_exec.sh
       elif [[ "$*" =~ "StandardErrorContent" ]]; then
         echo "error data"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -174,7 +185,7 @@ source ./lib/commands/ssm_exec.sh
   run ssm_exec
   
   assert_success
-  assert_output --partial "STDERR:"
+  assert_output --partial "STDERR"
 }
 
 @test "ssm_exec shows message when no output" {
@@ -186,6 +197,8 @@ source ./lib/commands/ssm_exec.sh
         echo "Success"
       fi
       # No output
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -199,7 +212,7 @@ source ./lib/commands/ssm_exec.sh
   run ssm_exec
   
   assert_success
-  assert_output --partial "NO OUTPUT"
+  assert_output --partial "No output returned"
 }
 
 @test "ssm_exec displays output from multiple instances" {
@@ -216,6 +229,8 @@ source ./lib/commands/ssm_exec.sh
           echo "Output from instance 2"
         fi
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -226,9 +241,10 @@ source ./lib/commands/ssm_exec.sh
     esac
   }
   export -f aws
+  export -f aws_expand_instances
   
   COMMAND_ARG="uptime"
-  INSTANCES_ARG="web;db"
+  INSTANCES_ARG="web,db"
   PROFILE="test"
   REGION="us-east-1"
   
@@ -249,6 +265,8 @@ source ./lib/commands/ssm_exec.sh
       elif [[ "$*" =~ "StandardOutputContent" ]]; then
         echo "some output"
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
@@ -262,8 +280,9 @@ source ./lib/commands/ssm_exec.sh
   run ssm_exec
   
   assert_success
-  # Should have dividers
-  assert_output --partial "----"
+  # Should have box drawing characters for dividers
+  assert_output --partial "┌─"
+  assert_output --partial "└─"
 }
 
 @test "ssm_exec handles get-command-invocation failure gracefully" {
@@ -277,6 +296,8 @@ source ./lib/commands/ssm_exec.sh
         # Fail on output queries
         return 1
       fi
+    elif [[ "$1" == "sts" && "$2" == "get-caller-identity" ]]; then
+      echo "123456789012"
     fi
     return 0
   }
