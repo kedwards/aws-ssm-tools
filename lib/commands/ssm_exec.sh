@@ -5,8 +5,6 @@ set -euo pipefail
 ssm_exec_usage() {
   cat <<EOF
 Usage: ssm exec [OPTIONS]
-       aws-ssm-exec [OPTIONS]
-       ssmx [OPTIONS]
 
 Run a shell command via AWS SSM on one or more instances.
 
@@ -20,9 +18,6 @@ Options:
   -h, --help        Show this help message
 
 Examples:
-  # Authenticate first
-  assume prod -r us-west-2
-
   # Run command on single instance (by name)
   ssm exec -c 'df -h' -i KeyMaster
 
@@ -30,8 +25,7 @@ Examples:
   ssm exec -c 'df -h' -i i-1234567890abcdef0
 
   # Run command on multiple instances
-  ssm exec -c 'df -h' -i KeyMaster,Admin
-  ssm exec -c 'df -h' -i 'KeyMaster;Admin'
+  ssm exec -c 'df -h' -i KeyMaster,Admin,i-1234567890abcdef0
 
   # Interactive instance selection
   ssm exec -c 'uptime'

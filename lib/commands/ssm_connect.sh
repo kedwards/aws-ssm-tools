@@ -12,8 +12,6 @@ ssm_connect_usage() {
 Usage: ssm connect [OPTIONS] [INSTANCE]
 
 Options:
-  -p, --profile PROFILE
-  -r, --region REGION
   -c, --config           Config-based port forwarding
   -f, --file FILE        Config file override
   -h, --help
