@@ -12,7 +12,7 @@ ssm_connect_usage() {
 Usage: ssm connect [OPTIONS] [INSTANCE]
 
 Options:
-  -c, --config           Config-based port forwarding
+  --config               Config-based port forwarding
   -f, --file FILE        Config file override
   -h, --help
 EOF
