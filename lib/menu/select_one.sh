@@ -72,8 +72,8 @@ guard_function_override menu_select_one || menu_select_one() {
     select sel in "${items[@]}"; do
       case "$REPLY" in
         0)
-          PS3="$old_ps3"i
-          _menu_cancelo
+          PS3="$old_ps3"
+          _menu_cancel
           return 130
           ;;
         '') log_warn "Invalid selection" ;;
