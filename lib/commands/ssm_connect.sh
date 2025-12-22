@@ -48,11 +48,12 @@ ssm_connect_shell_mode() {
   #  Skip auth entirely in help
   [[ "${SHOW_HELP:-false}" == true ]] && return 0
 
-  local instance instance_name instance_id
-  instance=$(aws_ec2_select_instance "Select instance to connect to" "$target") || return 130
-
   # Only authenticate if we're actually going to execute
   aws_auth_assume "$PROFILE" "$REGION" || return 1
+
+  local instance instance_name instance_id
+  local subheader="Profile: ${PROFILE:-default} | Region: ${REGION:-${AWS_DEFAULT_REGION:-unknown}}"
+  instance=$(aws_ec2_select_instance "Select instance to connect to" "$target" "$subheader") || return 130
 
   instance_name="${instance% *}"
   instance_id="${instance##* }"
@@ -112,7 +113,8 @@ ssm_connect_config_mode() {
   aws_auth_assume "$PROFILE" "$REGION" || return 1
 
   local instance
-  instance=$(aws_ec2_select_instance "Select instance" "$name") || return 130
+  local subheader="Profile: ${PROFILE:-default} | Region: ${REGION:-${AWS_DEFAULT_REGION:-unknown}}"
+  instance=$(aws_ec2_select_instance "Select instance" "$name" "$subheader") || return 130
   local instance_id="${instance##* }"
 
   # log_info "Starting port forward: $instance_name ($instance_id)"

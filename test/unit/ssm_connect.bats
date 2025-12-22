@@ -72,4 +72,26 @@ setup() {
   assert_output --partial "Usage: ssm connect"
 }
 
+@test "ssm connect includes profile and region in subheader" {
+  export MENU_NON_INTERACTIVE=1
+  export MENU_ASSUME_FIRST=1
+  export CONFIG_MODE=false
+  export PROFILE="prod"
+  export REGION="us-west-2"
+  
+  # Mock aws_ec2_select_instance to capture the subheader argument
+  aws_ec2_select_instance() {
+    # Arguments: prompt, target, subheader
+    local subheader="$3"
+    # Verify subheader contains profile and region
+    [[ "$subheader" =~ "prod" ]] && [[ "$subheader" =~ "us-west-2" ]] || return 1
+    echo "test-instance i-1234567890"
+  }
+
+  run ssm_connect
+
+  assert_success
+  assert_output --partial "SSM_SHELL i-1234567890"
+}
+
 

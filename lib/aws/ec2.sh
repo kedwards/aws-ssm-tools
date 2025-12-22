@@ -23,6 +23,7 @@ guard_function_override aws_expand_instances || aws_expand_instances() {
 guard_function_override aws_ec2_select_instance || aws_ec2_select_instance() {
   local prompt="$1"
   local target="$2"
+  local subheader="${3:-}"
 
   local instance_id instance_name
 
@@ -50,7 +51,7 @@ guard_function_override aws_ec2_select_instance || aws_ec2_select_instance() {
     fi
 
     local chosen
-    menu_select_one "$prompt" "" chosen "${INSTANCE_LIST[@]}" || return 130
+    menu_select_one "$prompt" "$subheader" chosen "${INSTANCE_LIST[@]}" || return 130
 
     instance_name="${chosen% *}"
     instance_id="${chosen##* }"
