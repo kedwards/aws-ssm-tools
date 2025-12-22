@@ -42,12 +42,13 @@ setup() {
   log_warn(){ :; }
   log_error(){ echo "$*" >&2; }
 
-  # isolate environment
-  unset AWS_ACCESS_KEY_ID
-  unset AWS_SECRET_ACCESS_KEY
-  unset AWS_SESSION_TOKEN
-  unset AWS_PROFILE
-  unset AWS_REGION
+  # isolate environment - unset from the current shell
+  unset -v AWS_ACCESS_KEY_ID
+  unset -v AWS_SECRET_ACCESS_KEY
+  unset -v AWS_SESSION_TOKEN
+  unset -v AWS_PROFILE
+  unset -v AWS_REGION
+  unset -v AWS_DEFAULT_REGION
 
   # flags defaults
   SHOW_HELP=false
@@ -57,9 +58,12 @@ setup() {
 }
 
 teardown() {
-  unset AWS_ACCESS_KEY_ID
-  unset AWS_SECRET_ACCESS_KEY
-  unset AWS_SESSION_TOKEN
+  unset -v AWS_ACCESS_KEY_ID
+  unset -v AWS_SECRET_ACCESS_KEY
+  unset -v AWS_SESSION_TOKEN
+  unset -v AWS_PROFILE
+  unset -v AWS_REGION
+  unset -v AWS_DEFAULT_REGION
 }
 
 @test "aws_auth_is_valid returns false when no credentials exist" {
