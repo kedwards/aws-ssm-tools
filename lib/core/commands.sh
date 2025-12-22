@@ -85,9 +85,10 @@ aws_ssm_select_command() {
   for i in "${!COMMAND_NAMES[@]}"; do
     if [[ "${COMMAND_NAMES[$i]}" == "$selected_name" ]]; then
       local cmd="${COMMAND_STRINGS[$i]}"
-      # Expand variables in command
-      cmd=$(eval "echo \"$cmd\"")
-      printf -v "$__result_var" '%s' "$cmd"
+      # Use bash -c to expand command substitutions while preserving structure
+      local expanded_cmd
+      expanded_cmd=$(bash -c "printf '%s' \"$cmd\"")
+      printf -v "$__result_var" '%s' "$expanded_cmd"
       return 0
     fi
   done

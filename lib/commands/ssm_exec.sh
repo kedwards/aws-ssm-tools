@@ -130,22 +130,15 @@ ssm_exec() {
 
   log_info "Sending command to ${#instance_ids[@]} instance(s)"
 
-  # Create temp JSON file for AWS CLI
+  # Create JSON using jq to properly escape everything
   local tmpfile
   tmpfile=$(mktemp /tmp/ssm-script.XXXXXX)
   trap 'rm -f "${tmpfile:-}"' EXIT
 
-  cat >"$tmpfile" <<EOF
-{
-  "Parameters": {
-    "commands": [
-      "#!/bin/bash",
-      "$COMMAND_ARG"
-    ],
-    "executionTimeout": ["600"]
-  }
-}
-EOF
+  jq -n \
+    --arg cmd "$COMMAND_ARG" \
+    '{Parameters: {commands: ["#!/bin/bash", $cmd], executionTimeout: ["600"]}}' \
+    > "$tmpfile"
 
   # Send command via AWS SSM
   local cmd_id
