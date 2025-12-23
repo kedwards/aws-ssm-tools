@@ -5,6 +5,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../core/test_guard.sh"
 # Single-select menu
 # Usage: menu_select_one "Prompt" "Header" result_var "${array[@]}"
 guard_function_override menu_select_one || menu_select_one() {
+  log_debug "[select_one ENTRY] RAW PARAMS: \$# params, \$1='$1' \$2='$2' \$3='$3'"
+  
   if non_interactive_mode; then
     log_error "Selection menu not allowed in non-interactive mode"
     return 130
