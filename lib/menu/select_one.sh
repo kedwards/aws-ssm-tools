@@ -39,6 +39,8 @@ guard_function_override menu_select_one || menu_select_one() {
   local selection=""
   local fzf_rc=0
 
+  log_debug "Header is $header"
+
   if _menu_use_fzf; then
     selection="$(
       printf '%s\n' "${items[@]}" |

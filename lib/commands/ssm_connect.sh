@@ -41,7 +41,7 @@ ssm_connect_shell_mode() {
     && [[ -z "${INSTANCES_ARG:-}" ]] \
     && [[ "${MENU_ASSUME_FIRST:-0}" != "1" ]]; then
     log_error "Instance selection requires interaction"
-    log_error "Use --yes or pass instance ID"
+    log_error "or pass instance ID"
     return 1
   fi
 
@@ -52,7 +52,9 @@ ssm_connect_shell_mode() {
   aws_auth_assume "$PROFILE" "$REGION" || return 1
 
   local instance instance_name instance_id
-  local subheader="Profile: ${PROFILE:-default} | Region: ${REGION:-${AWS_DEFAULT_REGION:-unknown}}"
+  local subheader="Profile: ${PROFILE:-${AWS_PROFILE:-unknown}} | Region: ${REGION:-${AWS_REGION:-unknown}}"
+  log_debug "DEBUG - SubHeader is $subheader"
+  log_debug "DEBUG - Target value is '$target' (empty: [[ -z \"$target\" ]])"
   instance=$(aws_ec2_select_instance "Select instance to connect to" "$target" "$subheader") || return 130
 
   instance_name="${instance% *}"
