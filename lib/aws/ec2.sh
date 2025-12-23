@@ -55,6 +55,7 @@ guard_function_override aws_ec2_select_instance || aws_ec2_select_instance() {
     fi
 
     local chosen
+    log_debug "About to call menu_select_one with prompt='$prompt' subheader='$subheader' items_count=${#INSTANCE_LIST[@]}"
     menu_select_one "$prompt" "$subheader" chosen "${INSTANCE_LIST[@]}" || return 130
 
     instance_name="${chosen% *}"

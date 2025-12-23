@@ -23,7 +23,7 @@ guard_function_override menu_select_one || menu_select_one() {
     return 1
   fi
 
-  log_debug "menu_select_one: ${#items[@]} items"
+  log_debug "menu_select_one: prompt='$prompt' header='$header' items_count=${#items[@]}"
 
   # non-interactive (automation)
   if _menu_non_interactive; then
@@ -39,7 +39,7 @@ guard_function_override menu_select_one || menu_select_one() {
   local selection=""
   local fzf_rc=0
 
-  log_debug "Header is $header"
+  log_debug "Header is '$header' (empty: [[ -z \"$header\" ]])"
 
   if _menu_use_fzf; then
     selection="$(
