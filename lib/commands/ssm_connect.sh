@@ -53,8 +53,6 @@ ssm_connect_shell_mode() {
 
   local instance instance_name instance_id
   local subheader="Profile: ${PROFILE:-${AWS_PROFILE:-unknown}} | Region: ${REGION:-${AWS_REGION:-unknown}}"
-  log_debug "DEBUG - SubHeader is $subheader"
-  log_debug "DEBUG - Target value is '$target' (empty: [[ -z \"$target\" ]])"
   instance=$(aws_ec2_select_instance "Select instance to connect to" "$target" "$subheader") || return 130
 
   instance_name="${instance% *}"

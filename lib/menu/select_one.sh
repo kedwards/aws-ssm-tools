@@ -5,8 +5,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/../core/test_guard.sh"
 # Single-select menu
 # Usage: menu_select_one "Prompt" "Header" result_var "${array[@]}"
 guard_function_override menu_select_one || menu_select_one() {
-  log_debug "[select_one ENTRY] RAW PARAMS: \$# params, \$1='$1' \$2='$2' \$3='$3'"
-  
   if non_interactive_mode; then
     log_error "Selection menu not allowed in non-interactive mode"
     return 130
@@ -25,8 +23,6 @@ guard_function_override menu_select_one || menu_select_one() {
     return 1
   fi
 
-  log_debug "menu_select_one: prompt='$prompt' header='$header' items_count=${#items[@]}"
-
   # non-interactive (automation)
   if _menu_non_interactive; then
     if _menu_assume_first; then
@@ -41,7 +37,6 @@ guard_function_override menu_select_one || menu_select_one() {
   local selection=""
   local fzf_rc=0
 
-  log_debug "Header is '$header' (empty: [[ -z \"$header\" ]])"
 
   if _menu_use_fzf; then
     selection="$(
