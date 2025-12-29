@@ -63,6 +63,9 @@ This will:
 Create a specific type of release directly:
 
 ```bash
+# Interactive release (recommended for first time)
+task release
+
 # Patch release (bug fixes: 0.1.0 -> 0.1.1)
 task release:patch
 

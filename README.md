@@ -5,13 +5,13 @@ A Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions with inter
 ## Features
 
 - 🔐 **AWS Authentication** - Integration with [Granted](https://granted.dev) for AWS SSO
-- 🖥️  **Interactive Menus** - fzf-powered selection with fallback to bash `select`
+- 🖥️ **Interactive Menus** - fzf-powered selection with fallback to bash `select`
 - 🚀 **Shell Sessions** - Quick SSM session connections to EC2 instances
 - ⚡ **Command Execution** - Run commands on multiple instances simultaneously
 - 📋 **Session Management** - List and terminate active SSM sessions
 - 🔌 **Port Forwarding** - Config-based port forwarding to instances
 - 💾 **Saved Commands** - Reusable command library
-- ✅ **155 Tests** - Comprehensive test coverage with BATS
+- ✅ **100+ Tests** - Comprehensive test coverage with BATS
 
 ## Installation
 
