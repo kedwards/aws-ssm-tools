@@ -67,18 +67,41 @@ ssm_connect_config_mode() {
     return 1
   fi
 
-  local cfg="${CONFIG_FILE:-${SSMF_CONF:-$HOME/.ssmf.cfg}}"
-  [[ ! -f "$cfg" ]] && log_error "Config not found: $cfg" && return 1
+  local default_config="$HOME/.local/share/aws-ssm-tools/connections.config"
+  local user_config="$HOME/.config/aws-ssm-tools/connections.user.config"
+  local custom_config="${CONFIG_FILE:-}"
 
-  mapfile -t connections < <(
-    sed -nE '
-      /^[[:space:]]*\[[^]]+\][[:space:]]*$/ {
-        s/^[[:space:]]*\[//;
-        s/\][[:space:]]*$//;
-        p
-      }
-    ' "$cfg"
-  )
+  # Collect all config files that exist
+  local config_files=()
+  [[ -f "$default_config" ]] && config_files+=("$default_config")
+  [[ -f "$user_config" ]] && config_files+=("$user_config")
+  [[ -n "$custom_config" && -f "$custom_config" ]] && config_files+=("$custom_config")
+
+  if (( ${#config_files[@]} == 0 )); then
+    log_error "No connection config files found"
+    log_error "Checked: $default_config, $user_config"
+    return 1
+  fi
+
+  # Extract all sections from all config files (later files can override)
+  local -A connection_map
+  local file
+  for file in "${config_files[@]}"; do
+    while IFS= read -r section; do
+      connection_map["$section"]="$file"
+    done < <(
+      sed -nE '
+        /^[[:space:]]*\[[^]]+\][[:space:]]*$/ {
+          s/^[[:space:]]*\[//;
+          s/\][[:space:]]*$//;
+          p
+        }
+      ' "$file"
+    )
+  done
+
+  # Build connection list
+  mapfile -t connections < <(printf '%s\n' "${!connection_map[@]}" | sort)
 
   if (( ${#connections[@]} == 0 )); then
     log_error "No [sections] found in config file: $cfg"
@@ -92,6 +115,9 @@ ssm_connect_config_mode() {
   else
     menu_select_one "Select connection" "" conn "${connections[@]}" || return 130
   fi
+
+  # Get the config file that contains this connection
+  local cfg="${connection_map[$conn]}"
 
   local profile region port local_port host url name
   profile=$(aws_ssm_config_get "$cfg" "$conn" profile)
