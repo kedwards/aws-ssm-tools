@@ -64,9 +64,19 @@ else
   echo "[WARN] examples/commands.config not found, default commands may be outdated"
 fi
 
-# User custom commands in ~/.config/aws-ssm-tools/commands.user.config are preserved
+# Update default connections from examples/connections.config
+if [[ -f "${INSTALL_DIR}/examples/connections.config" ]]; then
+  echo "[INFO] Updating default connections..."
+  cp "${INSTALL_DIR}/examples/connections.config" "${INSTALL_DIR}/connections.config"
+else
+  echo "[WARN] examples/connections.config not found, default connections may be outdated"
+fi
+
+# User custom configs in ~/.config/aws-ssm-tools/ are preserved
 echo "[INFO] Default commands updated in ${INSTALL_DIR}/commands.config"
+echo "[INFO] Default connections updated in ${INSTALL_DIR}/connections.config"
 echo "[INFO] User custom commands preserved in ~/.config/${REPO_NAME}/commands.user.config"
+echo "[INFO] User custom connections preserved in ~/.config/${REPO_NAME}/connections.user.config"
 
 # Show new version
 NEW_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"

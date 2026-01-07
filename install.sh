@@ -57,6 +57,14 @@ else
   echo "[WARN] examples/commands.config not found, skipping default commands"
 fi
 
+# Copy default connections from examples/connections.config to connections.config
+if [[ -f "${INSTALL_DIR}/examples/connections.config" ]]; then
+  echo "[INFO] Installing default connections..."
+  cp "${INSTALL_DIR}/examples/connections.config" "${INSTALL_DIR}/connections.config"
+else
+  echo "[WARN] examples/connections.config not found, skipping default connections"
+fi
+
 # Symlink the bin/ commands
 echo "[INFO] Creating symlinks in ${BIN_DIR}"
 for f in "${INSTALL_DIR}/bin/"*; do
@@ -64,10 +72,12 @@ for f in "${INSTALL_DIR}/bin/"*; do
   ln -sf "${f}" "${BIN_DIR}/${cmd}"
 done
 
-# Note: Default commands.config is in INSTALL_DIR and will be loaded automatically
-# Users can create custom commands in ~/.config/aws-ssm-tools/commands.user.config
+# Note: Default configs are in INSTALL_DIR and will be loaded automatically
+# Users can create custom configs in ~/.config/aws-ssm-tools/
 echo "[INFO] Default commands available in ${INSTALL_DIR}/commands.config"
+echo "[INFO] Default connections available in ${INSTALL_DIR}/connections.config"
 echo "[INFO] Create custom commands in ~/.config/${REPO_NAME}/commands.user.config"
+echo "[INFO] Create custom connections in ~/.config/${REPO_NAME}/connections.user.config"
 
 # Show installed version
 INSTALLED_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"
