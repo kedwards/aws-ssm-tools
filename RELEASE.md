@@ -137,13 +137,13 @@ Users can update to a specific version:
 
 ```bash
 # Update to latest release
-~/.local/share/aws-ssm-tools/update.sh
+ssm update
 
 # Update to specific version
-~/.local/share/aws-ssm-tools/update.sh v0.1.0
+ssm update v1.3.1
 
 # Update to main branch
-~/.local/share/aws-ssm-tools/update.sh main
+ssm update main
 ```
 
 ### Checking Installed Version
@@ -245,7 +245,7 @@ git push origin main --force
 1. Work on feature branches
 2. Submit PRs to `main`
 3. Maintainers will handle releases
-4. Update to the latest version: `~/.local/share/aws-ssm-tools/update.sh`
+4. Update to the latest version: `ssm update`
 
 ## Version History
 

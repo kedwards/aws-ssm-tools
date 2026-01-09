@@ -41,13 +41,13 @@ setup() {
     log_debug(){ :; }; log_info(){ :; }; log_warn(){ :; }; log_error(){ :; }
 
     printf "1\n" | {
-      menu_select_one "Pick" "Header" result foo || exit $?
-      echo "$result"
+      menu_select_one "Pick" "Header" result foo 2>/dev/null || exit $?
+      echo "RESULT=$result"
     }
   '
 
   assert_success
-  assert_line --index 0 "foo"
+  assert_output "RESULT=foo"
 }
 
 @test "cancel returns error code 130" {

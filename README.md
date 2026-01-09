@@ -169,6 +169,21 @@ ssm kill
 ssm kill --all
 ```
 
+### `ssm update`
+Update aws-ssm-tools to a specific version or the latest release.
+
+**Examples:**
+```bash
+# Update to latest release
+ssm update
+
+# Update to specific version
+ssm update v1.3.1
+
+# Update to development branch
+ssm update main
+```
+
 ## Configuration
 
 ### Saved Commands
@@ -244,19 +259,19 @@ ssm connect --config
 Update to the latest release:
 
 ```bash
-~/.local/share/aws-ssm-tools/update.sh
+ssm update
 ```
 
 Update to a specific version:
 
 ```bash
-~/.local/share/aws-ssm-tools/update.sh v0.1.0
+ssm update v1.3.1
 ```
 
 Update to development version (main branch):
 
 ```bash
-~/.local/share/aws-ssm-tools/update.sh main
+ssm update main
 ```
 
 ## PATH Configuration
