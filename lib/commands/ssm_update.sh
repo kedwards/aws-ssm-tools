@@ -53,7 +53,6 @@ ssm_update() {
   # Create temporary directory
   local tmpdir
   tmpdir="$(mktemp -d)"
-  trap 'rm -rf "$tmpdir"' EXIT
 
   # Determine download URL based on version
   local DOWNLOAD_URL EXTRACTED_DIR
@@ -87,12 +86,14 @@ ssm_update() {
   # Download and extract
   if ! curl -sSL "$DOWNLOAD_URL" | tar xz -C "$tmpdir"; then
     log_error "Failed to download or extract ${REPO_NAME} from ${DOWNLOAD_URL}"
+    rm -rf "$tmpdir"
     return 1
   fi
 
   # Verify extraction
   if [[ ! -d "$EXTRACTED_DIR" ]]; then
     log_error "Extraction failed: expected directory ${EXTRACTED_DIR} not found"
+    rm -rf "$tmpdir"
     return 1
   fi
 
@@ -100,6 +101,7 @@ ssm_update() {
   log_info "Syncing files..."
   if ! rsync -a --delete "${EXTRACTED_DIR}/" "${INSTALL_DIR}/"; then
     log_error "Failed to sync files to ${INSTALL_DIR}"
+    rm -rf "$tmpdir"
     return 1
   fi
 
@@ -129,6 +131,9 @@ ssm_update() {
   local NEW_VERSION
   NEW_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"
 
+  # Clean up temporary directory before showing success message
+  rm -rf "$tmpdir"
+  
   echo ""
   if [[ "$CURRENT_VERSION" != "$NEW_VERSION" ]]; then
     log_success "${REPO_NAME} updated from v${CURRENT_VERSION} to v${NEW_VERSION}!"
