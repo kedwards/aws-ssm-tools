@@ -30,6 +30,7 @@ source "$ROOT_DIR/lib/commands/ssm_connect.sh"
 source "$ROOT_DIR/lib/commands/ssm_list.sh"
 source "$ROOT_DIR/lib/commands/ssm_kill.sh"
 source "$ROOT_DIR/lib/commands/ssm_exec.sh"
+source "$ROOT_DIR/lib/commands/ssm_update.sh"
 
 usage() {
   cat <<EOF
@@ -42,6 +43,7 @@ Commands:
   exec       Run a shell command on one or more instances via SSM
   list       List active SSM sessions on this host
   kill       Terminate active SSM sessions
+  update     Update aws-ssm-tools to the latest version or a specific release
 
 Options:
   -h, --help     Show this help message
@@ -80,6 +82,9 @@ main() {
       ;;
     kill)
       ssm_kill "$@"
+      ;;
+    update)
+      ssm_update "$@"
       ;;
     *)
       echo "Unknown command: $cmd" >&2
