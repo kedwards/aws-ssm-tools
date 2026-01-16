@@ -283,7 +283,21 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ## Development
 
+### Setup
+
+When cloning the repository, initialize the test dependencies (BATS helper libraries):
+
+```bash
+git clone https://github.com/kedwards/aws-ssm-tools
+cd aws-ssm-tools
+git submodule update --init --recursive
+```
+
 ### Running Tests
+
+**Prerequisites:**
+- BATS (Bash Automated Testing System)
+- Test helpers (installed via git submodules)
 
 ```bash
 # All unit tests

@@ -1,6 +1,3 @@
-# Test dependencies
-test/helpers/bats-assert
-test/helpers/bats-support
 
 # Temporary files
 *.tmp

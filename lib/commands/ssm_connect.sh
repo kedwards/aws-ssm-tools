@@ -119,17 +119,29 @@ ssm_connect_config_mode() {
   # Get the config file that contains this connection
   local cfg="${connection_map[$conn]}"
 
-  local profile region port local_port host url name
+  local profile region port ports local_port local_ports host url name
   profile=$(aws_ssm_config_get "$cfg" "$conn" profile)
   region=$(aws_ssm_config_get "$cfg" "$conn" region)
   port=$(aws_ssm_config_get "$cfg" "$conn" port)
+  ports=$(aws_ssm_config_get "$cfg" "$conn" ports)
 
   local_port=$(aws_ssm_config_get "$cfg" "$conn" local_port)
+  local_ports=$(aws_ssm_config_get "$cfg" "$conn" local_ports)
   host=$(aws_ssm_config_get "$cfg" "$conn" host)
   url=$(aws_ssm_config_get "$cfg" "$conn" url)
   name=$(aws_ssm_config_get "$cfg" "$conn" name)
 
-  local_port="${local_port:-$port}"
+  # Support both single port and multiple ports
+  if [[ -n "$ports" ]]; then
+    # Multiple ports mode: ports=8428,9093 local_ports=8428,9093
+    IFS=',' read -ra port_array <<< "$ports"
+    IFS=',' read -ra local_port_array <<< "${local_ports:-$ports}"
+  else
+    # Single port mode (backwards compatible)
+    port_array=("$port")
+    local_port_array=("${local_port:-$port}")
+  fi
+
   host="${host:-localhost}"
 
   PROFILE="$profile"
@@ -143,8 +155,14 @@ ssm_connect_config_mode() {
   instance=$(aws_ec2_select_instance "Select instance" "$name" "$subheader") || return 130
   local instance_id="${instance##* }"
 
-  # log_info "Starting port forward: $instance_name ($instance_id)"
-  aws_ssm_start_port_forward "$instance_id" "$host" "$port" "$local_port" &
+  # Start port forwarding for each port
+  local i
+  for i in "${!port_array[@]}"; do
+    local p="${port_array[$i]}"
+    local lp="${local_port_array[$i]:-$p}"
+    log_info "Starting port forward: localhost:$lp -> $host:$p"
+    aws_ssm_start_port_forward "$instance_id" "$host" "$p" "$lp" &
+  done
 
   [[ -n "$url" ]] && sleep 2 && open_browser "$url" || true
 }

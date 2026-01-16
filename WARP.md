@@ -8,6 +8,18 @@ This is `aws-ssm-tools`, a Bash-based CLI tool for managing AWS Systems Manager 
 
 ## Development Commands
 
+### Setup
+
+When first cloning the repository, initialize git submodules for test dependencies:
+
+```bash
+git submodule update --init --recursive
+```
+
+This installs:
+- `test/helpers/bats-support` - BATS support library
+- `test/helpers/bats-assert` - BATS assertion library
+
 ### Testing
 ```bash
 # Run unit tests (no AWS authentication required)
@@ -143,9 +155,11 @@ All commands support `--dry-run` which:
 - Would require valid AWS credentials
 
 **Test Helpers** (`test/helpers/`)
-- `bats-support/` and `bats-assert/` - BATS testing libraries
+- `bats-support/` and `bats-assert/` - BATS testing libraries (git submodules)
 - `menu_harness.sh` - Common stubs for menu tests
 - Fake `fzf` wrapper for testing menu backends
+
+**Note:** Test helper libraries are managed as git submodules. Run `git submodule update --init --recursive` after cloning.
 
 ### Flag Handling
 
@@ -220,6 +234,7 @@ memory-info|Display memory information|free -h
 
 Config-based port forwarding uses INI-style config files:
 
+**Single Port:**
 ```ini
 [my-db]
 profile = prod
@@ -230,6 +245,19 @@ port = 5432
 local_port = 5432
 url = http://localhost:5432
 ```
+
+**Multiple Ports:**
+```ini
+[Monitoring-All]
+profile = ps
+region = us-west-2
+name = Monitoring
+host = localhost
+ports = 8428,9093
+local_ports = 8428,9093
+```
+
+Use `ports` and `local_ports` (comma-separated) to forward multiple ports with a single command. Each port opens in a background session.
 
 Config sections can be selected interactively via `ssm connect --config`.
 
