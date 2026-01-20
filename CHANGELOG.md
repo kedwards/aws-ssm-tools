@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Config-based Port Forwarding**: Profile field is now optional in connection configs
+  - When profile is omitted, uses current `AWS_PROFILE` or prompts for selection
+  - When profile is specified, validates and uses that profile as before
+  - Improves workflow when working within a single AWS profile
+
 ## [1.0.0] - 2025-12-20
 
 ### Added

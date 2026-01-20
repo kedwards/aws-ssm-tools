@@ -116,6 +116,12 @@ ssm_connect_config_mode() {
     menu_select_one "Select connection" "" conn "${connections[@]}" || return 130
   fi
 
+  # Validate connection was selected
+  if [[ -z "$conn" ]]; then
+    log_error "No connection selected"
+    return 1
+  fi
+
   # Get the config file that contains this connection
   local cfg="${connection_map[$conn]}"
 
@@ -144,8 +150,15 @@ ssm_connect_config_mode() {
 
   host="${host:-localhost}"
 
-  PROFILE="$profile"
-  REGION="$region"
+  # If profile is set in config, use it; otherwise use current/prompt
+  if [[ -n "$profile" ]]; then
+    PROFILE="$profile"
+  fi
+  
+  # Region can be set in config or detected later
+  if [[ -n "$region" ]]; then
+    REGION="$region"
+  fi
 
   choose_profile_and_region || return 1
   aws_auth_assume "$PROFILE" "$REGION" || return 1

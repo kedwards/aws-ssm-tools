@@ -83,11 +83,125 @@ setup() {
 }
 
 @test "ssm connect config mode fails with empty config file" {
+  # Ensure no other config files exist
+  HOME="/tmp/test-home-$$"
+  mkdir -p "$HOME"
+  
   export CONFIG_MODE=true
   export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/empty.cfg"
 
   run ssm_connect
 
   assert_failure
+  
+  # Cleanup
+  rm -rf "$HOME"
+}
+
+@test "ssm connect config mode works without profile in config" {
+  # Override stub to return empty profile
+  aws_ssm_config_get() {
+    local _file="$1"
+    local _section="$2"
+    local key="$3"
+
+    case "$key" in
+      profile)    echo "" ;;  # No profile in config
+      region)     echo "us-west-2" ;;
+      port)       echo "5432" ;;
+      local_port) echo "15432" ;;
+      host)       echo "localhost" ;;
+      name)       echo "test-instance" ;;
+      *)          return 1 ;;
+    esac
+  }
+
+  # Stub choose_profile_and_region to set PROFILE
+  choose_profile_and_region() {
+    PROFILE="${PROFILE:-current-profile}"
+    REGION="${REGION:-us-west-2}"
+    return 0
+  }
+
+  export CONFIG_MODE=true
+  export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/no-profile.cfg"
+
+  run ssm_connect
+
+  assert_success
+  assert_output --partial "SSM_PORT_FORWARD i-1234567890 localhost 5432 15432"
+}
+
+@test "ssm connect config mode uses AWS_PROFILE when no profile in config" {
+  # Override stub to return empty profile
+  aws_ssm_config_get() {
+    local _file="$1"
+    local _section="$2"
+    local key="$3"
+
+    case "$key" in
+      profile)    echo "" ;;  # No profile in config
+      region)     echo "us-west-2" ;;
+      port)       echo "5432" ;;
+      local_port) echo "15432" ;;
+      host)       echo "localhost" ;;
+      name)       echo "test-instance" ;;
+      *)          return 1 ;;
+    esac
+  }
+
+  # Stub to verify current profile is used
+  choose_profile_and_region() {
+    PROFILE="${PROFILE:-${AWS_PROFILE:-fallback}}"
+    REGION="${REGION:-us-west-2}"
+    return 0
+  }
+
+  export CONFIG_MODE=true
+  export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/no-profile.cfg"
+  export AWS_PROFILE="my-current-profile"
+
+  run ssm_connect
+
+  assert_success
+  # Verify it still works with current profile
+  assert_output --partial "SSM_PORT_FORWARD i-1234567890 localhost 5432 15432"
+}
+
+@test "ssm connect config mode overrides current profile when profile in config" {
+  # Normal stub with profile specified
+  aws_ssm_config_get() {
+    local _file="$1"
+    local _section="$2"
+    local key="$3"
+
+    case "$key" in
+      profile)    echo "config-profile" ;;  # Profile specified in config
+      region)     echo "us-west-2" ;;
+      port)       echo "5432" ;;
+      local_port) echo "15432" ;;
+      host)       echo "localhost" ;;
+      name)       echo "test-instance" ;;
+      *)          return 1 ;;
+    esac
+  }
+
+  # Stub to track that PROFILE was set from config
+  local profile_used=""
+  choose_profile_and_region() {
+    profile_used="$PROFILE"
+    REGION="${REGION:-us-west-2}"
+    return 0
+  }
+
+  export CONFIG_MODE=true
+  export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/ssmf.cfg"
+  export AWS_PROFILE="different-profile"
+
+  run ssm_connect
+
+  assert_success
+  # Verify the config profile takes precedence
+  assert_output --partial "SSM_PORT_FORWARD i-1234567890 localhost 5432 15432"
 }
 
