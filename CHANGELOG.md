@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-01-20
+
 ### Added
 - **Config-based Port Forwarding**: Profile field is now optional in connection configs
   - When profile is omitted, uses current `AWS_PROFILE` or prompts for selection
@@ -107,5 +109,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macOS support expected but not extensively tested
 - Requires bash 4.0 or later
 
-[Unreleased]: https://github.com/kedwards/aws-ssm-tools/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/kedwards/aws-ssm-tools/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/kedwards/aws-ssm-tools/compare/v1.0.0...v1.5.0
 [1.0.0]: https://github.com/kedwards/aws-ssm-tools/releases/tag/v1.0.0
