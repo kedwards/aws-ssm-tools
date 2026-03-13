@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-03-13
+
+### Added
+- **`ssm login`** - Authenticate with AWS via Granted (`source assume`)
+  - Interactive profile/region selection or explicit via `-p`/`-r` flags
+  - New `aws_auth_login()` function that actively calls `source assume`
+- **`ssm run`** - Run commands/scripts across multiple AWS profiles (integrated from aws-tools)
+  - Snippet files with `#ENV`/`#REGION` placeholder substitution
+  - Executable scripts (run directly or iterated per-profile)
+  - Inline queries via `-q` flag
+  - Custom commands directory via `-d` flag or `AWS_TOOLS_CMD_DIR` env var
+  - Profile iteration with `source assume` per entry
+  - Filter by profile name or `profile:region` pairs
+- **`ssm creds`** - AWS credential management
+  - `store <env>` - Capture credentials via Granted into shell env vars
+  - `use` - Re-apply stored AK/SK/ST as AWS\_ env vars
+- **Auth layer upgrade** - `aws_auth_assume()` now supports auto-login via `AWS_AUTH_AUTO_LOGIN=1`
+- **55 new tests** - Total test count increased from 204 to 259
+
 ## [1.5.0] - 2026-01-20
 
 ### Added
@@ -109,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - macOS support expected but not extensively tested
 - Requires bash 4.0 or later
 
-[Unreleased]: https://github.com/kedwards/aws-ssm-tools/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/kedwards/aws-ssm-tools/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/kedwards/aws-ssm-tools/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kedwards/aws-ssm-tools/compare/v1.0.0...v1.5.0
 [1.0.0]: https://github.com/kedwards/aws-ssm-tools/releases/tag/v1.0.0
