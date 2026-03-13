@@ -80,10 +80,10 @@ teardown() {
   assert_success
 }
 
-@test "aws_auth_assume fails when no credentials exist" {
+@test "aws_auth_assume fails when no credentials and no profile" {
   stub_sts_invalid
 
-  run aws_auth_assume default us-west-2
+  run aws_auth_assume "" ""
 
   assert_failure
   assert_output --partial "No AWS credentials found"
@@ -292,8 +292,7 @@ EOF
 
 # --- aws_auth_assume auto-login tests ---
 
-@test "aws_auth_assume auto-login calls aws_auth_login when enabled" {
-  export AWS_AUTH_AUTO_LOGIN=1
+@test "aws_auth_assume auto-login calls aws_auth_login when profile available" {
   stub_sts_invalid
 
   aws_auth_login() {
@@ -307,23 +306,7 @@ EOF
   assert_output --partial "AUTO_LOGIN: testprofile us-west-2"
 }
 
-@test "aws_auth_assume does not auto-login when disabled" {
-  export AWS_AUTH_AUTO_LOGIN=0
-  stub_sts_invalid
-
-  aws_auth_login() {
-    echo "SHOULD_NOT_RUN"
-    return 0
-  }
-
-  run aws_auth_assume testprofile us-west-2
-
-  assert_failure
-  refute_output --partial "SHOULD_NOT_RUN"
-}
-
 @test "aws_auth_assume auto-login fails when login fails" {
-  export AWS_AUTH_AUTO_LOGIN=1
   stub_sts_invalid
 
   aws_auth_login() {
@@ -336,7 +319,6 @@ EOF
 }
 
 @test "aws_auth_assume auto-login skipped when no profile" {
-  export AWS_AUTH_AUTO_LOGIN=1
   stub_sts_invalid
 
   aws_auth_login() {

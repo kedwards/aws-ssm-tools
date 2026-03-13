@@ -8,9 +8,6 @@ Usage: ssm exec [OPTIONS]
 
 Run a shell command via AWS SSM on one or more instances.
 
-Note: You must authenticate with AWS before running this command.
-      Use 'assume <profile> -r <region>' to authenticate.
-
 Options:
   -c <command>      Command to execute on the instances
   -i <instances>    Instance names or IDs (comma-separated for multiple)
@@ -59,8 +56,9 @@ ssm_exec() {
     return 1
   fi
 
-  # Validate AWS authentication
-  aws_auth_assume "${PROFILE:-}" "${REGION:-}" || return 1
+  # Resolve profile/region and authenticate
+  choose_profile_and_region || return 1
+  aws_auth_assume "$PROFILE" "$REGION" || return 1
 
   # Expand instances
   local instance_ids=()

@@ -25,11 +25,11 @@ setup() {
   assert_output --partial "not allowed in non-interactive mode"
 }
 
-@test "aws_auth_assume fails fast without credentials" {
+@test "aws_auth_assume fails fast without credentials and no profile" {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
   aws() { return 1; }  # STS call fails
 
-  run aws_auth_assume test us-west-2
+  run aws_auth_assume "" ""
 
   assert_failure
   assert_output --partial "No AWS credentials found"

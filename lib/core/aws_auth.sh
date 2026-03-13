@@ -62,8 +62,8 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
 
   # Check if already authenticated
   if ! (aws_auth_is_valid || aws_auth_detected); then
-    # Auto-login if enabled
-    if [[ "${AWS_AUTH_AUTO_LOGIN:-0}" == "1" && -n "$profile" ]]; then
+    # Auto-login if profile is available
+    if [[ -n "$profile" ]]; then
       log_info "No credentials found, attempting login for '$profile'"
       aws_auth_login "$profile" "$region" || return 1
       return 0

@@ -48,7 +48,8 @@ ssm_connect_shell_mode() {
   #  Skip auth entirely in help
   [[ "${SHOW_HELP:-false}" == true ]] && return 0
 
-  # Only authenticate if we're actually going to execute
+  # Resolve profile/region and authenticate
+  choose_profile_and_region || return 1
   aws_auth_assume "$PROFILE" "$REGION" || return 1
 
   local instance instance_name instance_id

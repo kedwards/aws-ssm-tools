@@ -287,7 +287,7 @@ Config sections can be selected interactively via `ssm connect --config`.
 
 ## Implementation Status
 
-**Completed Commands** (284 tests passing):
+**Completed Commands** (276 tests passing):
 - `ssm login` - AWS SSO authentication via Granted
 - `ssm connect` - Shell sessions and config-based port forwarding
 - `ssm exec` - Multi-instance command execution (54 tests)
@@ -312,11 +312,13 @@ Config sections can be selected interactively via `ssm connect --config`.
 - `ssm list` - List active SSM sessions
 - `ssm kill` - Terminate active sessions
 
-### AWS Auth Layer
-The auth layer (`lib/core/aws_auth.sh`) provides two modes:
-- **Validate-only** (`aws_auth_assume`) - Checks for existing credentials; used by `connect`, `exec`, `list`, `kill`
-- **Active login** (`aws_auth_login`) - Calls `source assume` to obtain credentials; used by `login`, `run`
-- **Auto-login** - Set `AWS_AUTH_AUTO_LOGIN=1` to make `aws_auth_assume` automatically call `aws_auth_login` when no credentials are found
+### AWS Auth Layer (Unified)
+All commands use the same authentication flow — no pre-login required.
+
+The auth layer (`lib/core/aws_auth.sh`) provides:
+- `aws_auth_assume(profile, region)` - Checks for existing credentials; if none found and a profile is available, automatically calls `aws_auth_login` to authenticate. Used by `connect`, `exec`.
+- `aws_auth_login(profile, region)` - Actively authenticates by calling `source assume`. Used directly by `login` and `run` (per-profile iteration).
+- `choose_profile_and_region()` - Resolves profile/region from flags, env vars, or interactive selection. Called before auth in all commands.
 
 ### Profile-Iteration Commands (ssm run)
 The `ssm run` command resolves scripts from multiple directories in priority order:

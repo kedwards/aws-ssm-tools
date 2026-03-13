@@ -60,33 +60,22 @@ ssm --version
 
 ## Quick Start
 
-### 1. Authentication
+### 1. Connect to an Instance
+
+All commands authenticate automatically — no pre-login required. If no credentials are found, the tool will prompt for profile/region and log in via Granted.
 
 ```bash
-# Login via ssm (interactive profile/region selection)
-ssm login
-
-# Login to a specific profile
-ssm login -p prod -r us-east-1
-
-# Or authenticate directly with assume
-assume prod -r us-east-1
-```
-
-### 2. Connect to an Instance
-
-```bash
-# Interactive selection
+# Interactive profile/region selection + instance selection
 ssm connect
 
-# Direct connection
+# Direct connection with specific profile
 ssm connect -p prod -r us-east-1
 
 # Config-based port forwarding
 ssm connect --config
 ```
 
-### 3. Execute Commands
+### 2. Execute Commands
 
 ```bash
 # Interactive: select command and instances
@@ -95,8 +84,8 @@ ssm exec
 # Explicit command on multiple instances
 ssm exec -c "uptime" -i "web-server;db-server"
 
-# Use saved command
-ssm exec -c disk-usage -i prod-app
+# Use saved command with specific profile
+ssm exec -c disk-usage -i prod-app -p prod -r us-east-1
 ```
 
 ### 4. Run Across Profiles
@@ -403,7 +392,6 @@ ssm connect --config
 - `MENU_NO_FZF` - Force bash `select` instead of fzf
 - `AWS_SSM_COMMAND_FILE` - Custom commands file path
 - `AWS_TOOLS_CMD_DIR` - Exclusive single-directory override for `ssm run` (bypasses default + user dir merging)
-- `AWS_AUTH_AUTO_LOGIN` - Set to `1` to auto-login when credentials are missing
 - `AWS_AUTH_DISABLE_ASSUME` - Set to `1` to skip assume calls (for testing)
 
 ## Updating
@@ -504,11 +492,14 @@ See [RELEASE.md](RELEASE.md) for detailed release management documentation.
 
 ### "No AWS credentials found"
 
-Use `ssm login` or run `assume` directly:
+All commands auto-login when a profile is provided. If you see this error, pass a profile:
+```bash
+ssm connect -p your-profile -r us-east-1
+```
+
+Or log in explicitly:
 ```bash
 ssm login -p your-profile -r us-east-1
-# or
-assume your-profile -r us-east-1
 ```
 
 ### "session-manager-plugin not found"
