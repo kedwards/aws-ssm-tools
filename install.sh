@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_NAME="aws-ssm-tools"
+REPO_NAME="aws-tools"
 REPO="kedwards/${REPO_NAME}"
 INSTALL_DIR="${HOME}/.local/share/${REPO_NAME}"
 BIN_DIR="${HOME}/.local/bin"
@@ -75,7 +75,7 @@ for f in "${INSTALL_DIR}/bin/"*; do
 done
 
 # Note: Default configs are in INSTALL_DIR and will be loaded automatically
-# Users can create custom configs in ~/.config/aws-ssm-tools/
+# Users can create custom configs in ~/.config/aws-tools/
 echo "[INFO] Default commands available in ${INSTALL_DIR}/commands/"
 echo "[INFO] Default connections available in ${INSTALL_DIR}/connections.config"
 echo "[INFO] Create custom commands in ~/.config/${REPO_NAME}/commands/"

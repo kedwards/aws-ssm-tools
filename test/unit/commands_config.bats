@@ -22,8 +22,8 @@ setup() {
   export HOME="$TEST_HOME"
 
   # Create config directories
-  mkdir -p "$HOME/.local/share/aws-ssm-tools/commands/ssm"
-  mkdir -p "$HOME/.config/aws-ssm-tools/commands/ssm"
+  mkdir -p "$HOME/.local/share/aws-tools/commands/ssm"
+  mkdir -p "$HOME/.config/aws-tools/commands/ssm"
 }
 
 teardown() {
@@ -44,8 +44,8 @@ teardown() {
 }
 
 @test "aws_ssm_load_commands loads from default install dir" {
-  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
-  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/memory-info"
 
   source ./lib/core/commands.sh
 
@@ -65,7 +65,7 @@ teardown() {
 }
 
 @test "aws_ssm_load_commands loads from user dir" {
-  printf '# Custom command\necho hello\n' > "$HOME/.config/aws-ssm-tools/commands/ssm/custom-cmd"
+  printf '# Custom command\necho hello\n' > "$HOME/.config/aws-tools/commands/ssm/custom-cmd"
 
   source ./lib/core/commands.sh
 
@@ -89,8 +89,8 @@ teardown() {
 }
 
 @test "aws_ssm_load_commands skips files with only comments" {
-  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
-  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/memory-info"
 
   source ./lib/core/commands.sh
 
@@ -99,11 +99,11 @@ teardown() {
 }
 
 @test "aws_ssm_load_commands merges dirs with user overriding default" {
-  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
-  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/memory-info"
 
-  printf '# Custom disk check\ndf -H\n' > "$HOME/.config/aws-ssm-tools/commands/ssm/disk-usage"
-  printf '# Custom command\necho hello\n' > "$HOME/.config/aws-ssm-tools/commands/ssm/custom-cmd"
+  printf '# Custom disk check\ndf -H\n' > "$HOME/.config/aws-tools/commands/ssm/disk-usage"
+  printf '# Custom command\necho hello\n' > "$HOME/.config/aws-tools/commands/ssm/custom-cmd"
 
   source ./lib/core/commands.sh
 
@@ -122,7 +122,7 @@ teardown() {
 }
 
 @test "aws_ssm_load_commands handles multi-line command bodies" {
-  printf '# Search logs\ngrep ERROR /var/log/app.log | tail -20\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/grep-logs"
+  printf '# Search logs\ngrep ERROR /var/log/app.log | tail -20\n' > "$HOME/.local/share/aws-tools/commands/ssm/grep-logs"
 
   source ./lib/core/commands.sh
 
@@ -132,7 +132,7 @@ teardown() {
 }
 
 @test "aws_ssm_load_commands handles files with shebang" {
-  printf '#!/usr/bin/env bash\n# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '#!/usr/bin/env bash\n# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
 
   source ./lib/core/commands.sh
 
@@ -152,8 +152,8 @@ teardown() {
 }
 
 @test "aws_ssm_select_command returns selected command" {
-  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
-  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/memory-info"
 
   # Mock menu_select_one to select first item
   menu_select_one() {
@@ -171,7 +171,7 @@ teardown() {
 }
 
 @test "aws_ssm_select_command returns error when menu cancelled" {
-  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
 
   # Mock menu_select_one to return error (cancelled)
   menu_select_one() {
@@ -187,7 +187,7 @@ teardown() {
 }
 
 @test "aws_ssm_select_command handles command with spaces" {
-  printf '# List all files\nls -la /var/log\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/list-files"
+  printf '# List all files\nls -la /var/log\n' > "$HOME/.local/share/aws-tools/commands/ssm/list-files"
 
   # Mock menu_select_one
   menu_select_one() {
@@ -205,8 +205,8 @@ teardown() {
 }
 
 @test "aws_ssm_select_command displays commands with descriptions" {
-  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
-  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-tools/commands/ssm/memory-info"
 
   # Mock menu_select_one to capture display items
   menu_select_one() {

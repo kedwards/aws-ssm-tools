@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Saved Commands**
   - Command library system with user and system commands
   - Default commands installed from `examples/commands.config`
-  - User custom commands in `~/.config/aws-ssm-tools/commands.user.config`
+  - User custom commands in `~/.config/aws-tools/commands.user.config`
   - Environment variable override support (`AWS_SSM_COMMAND_FILE`)
 
 - **Port Forwarding**
@@ -121,14 +121,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture**: Layered architecture with core, AWS, menu, and command layers
 - **Dependencies**: bash 4.0+, AWS CLI, Granted (assume), session-manager-plugin
 - **Optional**: fzf for enhanced menus, shellcheck for linting
-- **Install Location**: `~/.local/share/aws-ssm-tools` with symlinks in `~/.local/bin`
+- **Install Location**: `~/.local/share/aws-tools` with symlinks in `~/.local/bin`
 
 ### Compatibility
 - Tested on Linux (EndeavourOS, Ubuntu, Amazon Linux)
 - macOS support expected but not extensively tested
 - Requires bash 4.0 or later
 
-[Unreleased]: https://github.com/kedwards/aws-ssm-tools/compare/v1.6.0...HEAD
-[1.6.0]: https://github.com/kedwards/aws-ssm-tools/compare/v1.5.0...v1.6.0
-[1.5.0]: https://github.com/kedwards/aws-ssm-tools/compare/v1.0.0...v1.5.0
-[1.0.0]: https://github.com/kedwards/aws-ssm-tools/releases/tag/v1.0.0
+[Unreleased]: https://github.com/kedwards/aws-tools/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/kedwards/aws-tools/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/kedwards/aws-tools/compare/v1.0.0...v1.5.0
+[1.0.0]: https://github.com/kedwards/aws-tools/releases/tag/v1.0.0

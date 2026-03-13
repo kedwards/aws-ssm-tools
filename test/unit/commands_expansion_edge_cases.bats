@@ -20,8 +20,8 @@ setup() {
   TEST_HOME="$(mktemp -d)"
   export HOME="$TEST_HOME"
 
-  mkdir -p "$HOME/.local/share/aws-ssm-tools/commands/ssm"
-  mkdir -p "$HOME/.config/aws-ssm-tools/commands/ssm"
+  mkdir -p "$HOME/.local/share/aws-tools/commands/ssm"
+  mkdir -p "$HOME/.config/aws-tools/commands/ssm"
 }
 
 teardown() {
@@ -32,7 +32,7 @@ teardown() {
 # Helper: write command file and mock menu to select it
 _setup_select() {
   local name="$1" desc="$2" body="$3"
-  printf '# %s\n%s\n' "$desc" "$body" > "$HOME/.local/share/aws-ssm-tools/commands/ssm/$name"
+  printf '# %s\n%s\n' "$desc" "$body" > "$HOME/.local/share/aws-tools/commands/ssm/$name"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -43,7 +43,7 @@ _setup_select() {
 }
 
 @test "preserves variable default syntax" {
-  printf '# Use default\necho ${MYVAR:-default_value}\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/default-var"
+  printf '# Use default\necho ${MYVAR:-default_value}\n' > "$HOME/.local/share/aws-tools/commands/ssm/default-var"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -58,7 +58,7 @@ _setup_select() {
 }
 
 @test "preserves quoted strings" {
-  printf '# Mixed quotes\necho "User: $USER" '"'"'Literal: $USER'"'"'\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/mixed-quotes"
+  printf '# Mixed quotes\necho "User: $USER" '"'"'Literal: $USER'"'"'\n' > "$HOME/.local/share/aws-tools/commands/ssm/mixed-quotes"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -87,7 +87,7 @@ _setup_select() {
 }
 
 @test "preserves here-string syntax" {
-  printf '# Here string\ngrep pattern <<< "test string"\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/here-string"
+  printf '# Here string\ngrep pattern <<< "test string"\n' > "$HOME/.local/share/aws-tools/commands/ssm/here-string"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -102,7 +102,7 @@ _setup_select() {
 }
 
 @test "preserves array syntax" {
-  printf '# Array variable\necho ${FILES[0]}\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/array-var"
+  printf '# Array variable\necho ${FILES[0]}\n' > "$HOME/.local/share/aws-tools/commands/ssm/array-var"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -117,7 +117,7 @@ _setup_select() {
 }
 
 @test "preserves parameter length syntax" {
-  printf '# Parameter length\necho ${#USER}\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/param-length"
+  printf '# Parameter length\necho ${#USER}\n' > "$HOME/.local/share/aws-tools/commands/ssm/param-length"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -132,7 +132,7 @@ _setup_select() {
 }
 
 @test "preserves string substitution syntax" {
-  printf '# String substitution\necho ${USER/test/prod}\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/string-sub"
+  printf '# String substitution\necho ${USER/test/prod}\n' > "$HOME/.local/share/aws-tools/commands/ssm/string-sub"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -147,7 +147,7 @@ _setup_select() {
 }
 
 @test "handles command file with extra blank lines between body lines" {
-  printf '# Spaced out\necho line1\n\necho line2\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/spaced"
+  printf '# Spaced out\necho line1\n\necho line2\n' > "$HOME/.local/share/aws-tools/commands/ssm/spaced"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"

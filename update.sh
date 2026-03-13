@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_NAME="aws-ssm-tools"
+REPO_NAME="aws-tools"
 REPO="kedwards/${REPO_NAME}"
 INSTALL_DIR="${HOME}/.local/share/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
@@ -74,7 +74,7 @@ else
   echo "[WARN] examples/commands not found, default commands may be outdated"
 fi
 
-# User custom configs in ~/.config/aws-ssm-tools/ are preserved
+# User custom configs in ~/.config/aws-tools/ are preserved
 echo "[INFO] Default commands updated in ${INSTALL_DIR}/commands/"
 echo "[INFO] Default connections updated in ${INSTALL_DIR}/connections.config"
 echo "[INFO] User custom commands preserved in ~/.config/${REPO_NAME}/commands/"

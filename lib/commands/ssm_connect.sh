@@ -68,8 +68,8 @@ ssm_connect_config_mode() {
     return 1
   fi
 
-  local default_config="$HOME/.local/share/aws-ssm-tools/connections.config"
-  local user_config="$HOME/.config/aws-ssm-tools/connections.user.config"
+  local default_config="$HOME/.local/share/aws-tools/connections.config"
+  local user_config="$HOME/.config/aws-tools/connections.user.config"
   local custom_config="${CONFIG_FILE:-}"
 
   # Collect all config files that exist

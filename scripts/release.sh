@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Release script for aws-ssm-tools
+# Release script for aws-tools
 # Usage: ./scripts/release.sh [major|minor|patch]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -175,7 +175,7 @@ gh release create "$TAG_NAME" \
 
 success "Release $TAG_NAME created successfully!"
 echo ""
-info "View release at: https://github.com/kedwards/aws-ssm-tools/releases/tag/$TAG_NAME"
+info "View release at: https://github.com/kedwards/aws-tools/releases/tag/$TAG_NAME"
 echo ""
 info "Users can install this version with:"
-echo "  curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash -s $TAG_NAME"
+echo "  curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash -s $TAG_NAME"

@@ -159,7 +159,7 @@ ssm_exec() {
   local current_region="${AWS_REGION:-${AWS_DEFAULT_REGION:-unknown}}"
   
   # Setup log file
-  local log_dir="${HOME}/.local/share/aws-ssm-tools/logs"
+  local log_dir="${HOME}/.local/share/aws-tools/logs"
   mkdir -p "$log_dir"
   local timestamp=$(date +%Y%m%d_%H%M%S)
   local log_file="${log_dir}/${current_profile}_${current_region}_${timestamp}.log"

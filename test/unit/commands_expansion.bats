@@ -21,8 +21,8 @@ setup() {
   TEST_HOME="$(mktemp -d)"
   export HOME="$TEST_HOME"
 
-  mkdir -p "$HOME/.local/share/aws-ssm-tools/commands/ssm"
-  mkdir -p "$HOME/.config/aws-ssm-tools/commands/ssm"
+  mkdir -p "$HOME/.local/share/aws-tools/commands/ssm"
+  mkdir -p "$HOME/.config/aws-tools/commands/ssm"
 }
 
 teardown() {
@@ -33,7 +33,7 @@ teardown() {
 # Helper: write command file and mock menu to select it
 _setup_select() {
   local name="$1" desc="$2" body="$3"
-  printf '# %s\n%s\n' "$desc" "$body" > "$HOME/.local/share/aws-ssm-tools/commands/ssm/$name"
+  printf '# %s\n%s\n' "$desc" "$body" > "$HOME/.local/share/aws-tools/commands/ssm/$name"
   menu_select_one() {
     local result_var="$3"
     shift 3
@@ -52,7 +52,7 @@ _setup_select() {
 }
 
 @test "preserves variable references without expanding" {
-  printf '# Echo username\necho $USER\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/echo-user"
+  printf '# Echo username\necho $USER\n' > "$HOME/.local/share/aws-tools/commands/ssm/echo-user"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -67,7 +67,7 @@ _setup_select() {
 }
 
 @test "preserves command substitution syntax" {
-  printf '# Show date\necho Today is $(date +%%Y-%%m-%%d)\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/show-date"
+  printf '# Show date\necho Today is $(date +%%Y-%%m-%%d)\n' > "$HOME/.local/share/aws-tools/commands/ssm/show-date"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"
@@ -117,7 +117,7 @@ _setup_select() {
 }
 
 @test "handles multi-line command body" {
-  printf '# Multi-line\nif [ -f /tmp/x ]; then\n  echo found\nfi\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/multi-line"
+  printf '# Multi-line\nif [ -f /tmp/x ]; then\n  echo found\nfi\n' > "$HOME/.local/share/aws-tools/commands/ssm/multi-line"
   menu_select_one() {
     local result_var="$3"; shift 3
     printf -v "$result_var" '%s' "$1"

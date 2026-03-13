@@ -18,7 +18,7 @@ setup() {
   # Create a temporary directory for fake installation
   export FAKE_HOME="$(mktemp -d)"
   export HOME="$FAKE_HOME"
-  export INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools"
+  export INSTALL_DIR="${HOME}/.local/share/aws-tools"
   
   # Source the update command
   source ./lib/commands/ssm_update.sh

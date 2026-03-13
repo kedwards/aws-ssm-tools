@@ -4,7 +4,7 @@ ssm_update_usage() {
   cat <<EOF
 Usage: ssm update [VERSION]
 
-Update aws-ssm-tools to a specific version or the latest release.
+Update aws-tools to a specific version or the latest release.
 
 Arguments:
   VERSION    Version to install (default: latest)
@@ -28,7 +28,7 @@ ssm_update() {
     return 0
   fi
 
-  local REPO_NAME="aws-ssm-tools"
+  local REPO_NAME="aws-tools"
   local REPO="kedwards/${REPO_NAME}"
   local INSTALL_DIR="${HOME}/.local/share/${REPO_NAME}"
   local REPO_URL="https://github.com/${REPO}"
@@ -121,7 +121,7 @@ ssm_update() {
     log_warn "examples/connections.config not found, default connections may be outdated"
   fi
 
-  # User custom configs in ~/.config/aws-ssm-tools/ are preserved
+  # User custom configs in ~/.config/aws-tools/ are preserved
   log_info "Default commands updated in ${INSTALL_DIR}/commands.config"
   log_info "Default connections updated in ${INSTALL_DIR}/connections.config"
   log_info "User custom commands preserved in ~/.config/${REPO_NAME}/commands.user.config"

@@ -1,6 +1,6 @@
-# AWS SSM Tools
+# AWS Tools
 
-A Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions with interactive menus and multi-instance command execution.
+A Bash-based CLI toolkit for AWS operations — SSM sessions, multi-instance command execution, profile-based scripting, and more.
 
 ## Features
 
@@ -20,25 +20,25 @@ A Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions with inter
 ### Latest Release (Recommended)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
 ```
 
 ### Specific Version
 
 ```bash
 # Install specific version
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash -s v0.1.0
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash -s v0.1.0
 ```
 
 ### From Source (Development)
 
 ```bash
-git clone https://github.com/kedwards/aws-ssm-tools
-cd aws-ssm-tools
+git clone https://github.com/kedwards/aws-tools
+cd aws-tools
 ./install.sh
 ```
 
-This installs to `~/.local/share/aws-ssm-tools` with symlinks in `~/.local/bin`.
+This installs to `~/.local/share/aws-tools` with symlinks in `~/.local/bin`.
 
 ### Check Version
 
@@ -192,8 +192,8 @@ Run a command or script against one or more AWS profiles.
 - `-d <path>` - Use only this commands directory (overrides defaults)
 
 **Command Directories (checked in priority order):**
-1. `~/.local/share/aws-ssm-tools/run-commands/` — default scripts shipped with the tool
-2. `~/.config/aws-ssm-tools/run-commands/` — your custom scripts (never overwritten by updates)
+1. `~/.local/share/aws-tools/run-commands/` — default scripts shipped with the tool
+2. `~/.config/aws-tools/run-commands/` — your custom scripts (never overwritten by updates)
 
 User scripts with the same name as a default script override the default. Use `-d` or `AWS_TOOLS_CMD_DIR` for an exclusive single-directory override.
 
@@ -265,7 +265,7 @@ ssm kill --all
 ```
 
 ### `ssm update`
-Update aws-ssm-tools to a specific version or the latest release.
+Update aws-tools to a specific version or the latest release.
 
 **Examples:**
 ```bash
@@ -283,11 +283,11 @@ ssm update main
 
 ### Saved Commands (`ssm exec`)
 
-Default commands are installed to `~/.local/share/aws-ssm-tools/commands.config` from `examples/commands.config`.
+Default commands are installed to `~/.local/share/aws-tools/commands.config` from `examples/commands.config`.
 
 You can override or add commands in these locations (checked in order):
-1. `~/.local/share/aws-ssm-tools/commands.config` (default commands, updated on install/update)
-2. `~/.config/aws-ssm-tools/commands.user.config` (your custom commands, never overwritten)
+1. `~/.local/share/aws-tools/commands.config` (default commands, updated on install/update)
+2. `~/.config/aws-tools/commands.user.config` (your custom commands, never overwritten)
 3. Custom path via `$AWS_SSM_COMMAND_FILE` environment variable
 
 **Format:**
@@ -301,8 +301,8 @@ docker-status|Check Docker containers|docker ps -a
 **Adding Custom Commands:**
 ```bash
 # Create user commands file (will never be overwritten by updates)
-mkdir -p ~/.config/aws-ssm-tools
-cat > ~/.config/aws-ssm-tools/commands.user.config <<'EOF'
+mkdir -p ~/.config/aws-tools
+cat > ~/.config/aws-tools/commands.user.config <<'EOF'
 # My custom commands
 my-check|Custom health check|curl http://localhost:8080/health
 restart-app|Restart application|systemctl restart myapp
@@ -311,7 +311,7 @@ EOF
 
 ### Run Commands (`ssm run`)
 
-Default run-commands are installed to `~/.local/share/aws-ssm-tools/run-commands/` from `examples/run-commands/`.
+Default run-commands are installed to `~/.local/share/aws-tools/run-commands/` from `examples/run-commands/`.
 
 Bundled scripts:
 
@@ -332,22 +332,22 @@ Bundled scripts:
 **Adding Custom Run Commands:**
 ```bash
 # Create user run-commands directory (never overwritten by updates)
-mkdir -p ~/.config/aws-ssm-tools/run-commands
+mkdir -p ~/.config/aws-tools/run-commands
 
 # Add a snippet (non-executable)
-cat > ~/.config/aws-ssm-tools/run-commands/my-report <<'EOF'
+cat > ~/.config/aws-tools/run-commands/my-report <<'EOF'
 # aws-tools command
 # My custom AWS report
 aws ec2 describe-instances --output table
 EOF
 
 # Add an executable script
-cat > ~/.config/aws-ssm-tools/run-commands/my-script <<'EOF'
+cat > ~/.config/aws-tools/run-commands/my-script <<'EOF'
 #!/usr/bin/env bash
 # My custom script
 echo "Running as profile: $AWS_PROFILE"
 EOF
-chmod +x ~/.config/aws-ssm-tools/run-commands/my-script
+chmod +x ~/.config/aws-tools/run-commands/my-script
 ```
 
 User scripts with the same name as a bundled script override the bundled version (shown with `+` in `ssm run` listing).
@@ -428,8 +428,8 @@ export PATH="$HOME/.local/bin:$PATH"
 When cloning the repository, initialize the test dependencies (BATS helper libraries):
 
 ```bash
-git clone https://github.com/kedwards/aws-ssm-tools
-cd aws-ssm-tools
+git clone https://github.com/kedwards/aws-tools
+cd aws-tools
 git submodule update --init --recursive
 ```
 

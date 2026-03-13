@@ -3,8 +3,8 @@
 # Tests for ssm run multi-source directory layering priority.
 #
 # The layering rules under test:
-#   1. Install dir  (~/.local/share/aws-ssm-tools/run-commands) is the shipped default
-#   2. User dir     (~/.config/aws-ssm-tools/run-commands) overrides install dir by name
+#   1. Install dir  (~/.local/share/aws-tools/run-commands) is the shipped default
+#   2. User dir     (~/.config/aws-tools/run-commands) overrides install dir by name
 #   3. -d <path>    is an exclusive override — install and user dirs are ignored
 #   4. AWS_TOOLS_CMD_DIR is an exclusive override — install and user dirs are ignored
 

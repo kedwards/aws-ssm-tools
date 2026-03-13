@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Default commands/ssm directories
-_SSM_CMD_INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools/commands/ssm"
-_SSM_CMD_USER_DIR="${HOME}/.config/aws-ssm-tools/commands/ssm"
+_SSM_CMD_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/ssm"
+_SSM_CMD_USER_DIR="${HOME}/.config/aws-tools/commands/ssm"
 
 # Global arrays to store loaded commands
 COMMAND_NAMES=()

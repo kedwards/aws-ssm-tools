@@ -1,6 +1,6 @@
 # Release Management
 
-This document describes the release process for `aws-ssm-tools`.
+This document describes the release process for `aws-tools`.
 
 ## Version Management
 
@@ -122,13 +122,13 @@ Users can install a specific version using the installer:
 
 ```bash
 # Install latest release (default)
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash
 
 # Install specific version
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash -s v0.1.0
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash -s v0.1.0
 
 # Install from main branch (development version)
-curl -sSL https://raw.githubusercontent.com/kedwards/aws-ssm-tools/main/install.sh | bash -s main
+curl -sSL https://raw.githubusercontent.com/kedwards/aws-tools/main/install.sh | bash -s main
 ```
 
 ### For Existing Installations

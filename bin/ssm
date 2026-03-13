@@ -52,7 +52,7 @@ usage() {
   cat <<EOF
 Usage: ssm <command> [options]
 
-AWS Systems Manager (SSM) session management tool
+AWS CLI toolkit — SSM sessions, command execution, profile scripting, and more
 
 Commands:
   login      Authenticate with AWS via Granted (assume)
@@ -63,7 +63,7 @@ Commands:
   list       List active SSM sessions on this host
   kill       Terminate active SSM sessions
   config     Show current configuration, paths, and environment variables
-  update     Update aws-ssm-tools to the latest version or a specific release
+  update     Update aws-tools to the latest version or a specific release
 
 Options:
   -h, --help     Show this help message
@@ -78,7 +78,7 @@ main() {
   
   # Handle version flag
   if [[ "$cmd" == "-v" ]] || [[ "$cmd" == "--version" ]]; then
-    echo "aws-ssm-tools version $VERSION"
+    echo "aws-tools v$VERSION"
     exit 0
   fi
   

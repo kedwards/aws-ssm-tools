@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-This is `aws-ssm-tools`, a Bash-based CLI tool for managing AWS Systems Manager (SSM) sessions. The tool provides interactive menus (with fzf support) for connecting to EC2 instances via SSM, executing commands on multiple instances, and managing sessions.
+This is `aws-tools`, a Bash-based CLI toolkit for AWS operations. The tool provides interactive menus (with fzf support) for SSM sessions, multi-instance command execution, profile-based scripting, credential management, and more.
 
 ## Development Commands
 
@@ -52,7 +52,7 @@ task ci
 
 ### Installation
 ```bash
-# Install to ~/.local/share/aws-ssm-tools with symlinks in ~/.local/bin
+# Install to ~/.local/share/aws-tools with symlinks in ~/.local/bin
 ./install.sh
 
 # Update existing installation
@@ -223,8 +223,8 @@ All commands are stored as individual files under a unified `commands/` director
 - `commands/ssm/` - Commands sent to instances via SSM (used by `ssm exec`)
 
 **SSM commands** (`commands/ssm/`) are loaded from `lib/core/commands.sh` in the following order:
-1. `~/.local/share/aws-ssm-tools/commands/ssm/` - Default commands (installed from `examples/commands/ssm/`)
-2. `~/.config/aws-ssm-tools/commands/ssm/` - User custom commands (never overwritten)
+1. `~/.local/share/aws-tools/commands/ssm/` - Default commands (installed from `examples/commands/ssm/`)
+2. `~/.config/aws-tools/commands/ssm/` - User custom commands (never overwritten)
 3. `$AWS_SSM_COMMAND_DIR` - Custom directory via environment variable
 
 Later directories override earlier ones by filename. The installer deploys `examples/commands/ssm/` to the default location during install/update.
@@ -302,8 +302,8 @@ Config sections can be selected interactively via `ssm connect --config`.
   - Inline queries via `-q`
   - Multi-source command resolution: installed defaults + user dir (merged, user overrides)
   - Custom commands directory via `-d` or `AWS_TOOLS_CMD_DIR` (exclusive override)
-  - 11 bundled commands deployed to `~/.local/share/aws-ssm-tools/commands/aws/`
-  - User scripts in `~/.config/aws-ssm-tools/commands/aws/` (never overwritten)
+  - 11 bundled commands deployed to `~/.local/share/aws-tools/commands/aws/`
+  - User scripts in `~/.config/aws-tools/commands/aws/` (never overwritten)
   - Profile iteration with `source assume` per entry
   - Filter by profile or profile:region pairs
 - `ssm creds` - AWS credential management
@@ -322,8 +322,8 @@ The auth layer (`lib/core/aws_auth.sh`) provides:
 
 ### Profile-Iteration Commands (ssm run)
 The `ssm run` command resolves scripts from multiple directories in priority order:
-1. `~/.local/share/aws-ssm-tools/commands/aws/` - Default scripts shipped with the tool (from `examples/commands/aws/`)
-2. `~/.config/aws-ssm-tools/commands/aws/` - User-defined scripts (never overwritten by install/update)
+1. `~/.local/share/aws-tools/commands/aws/` - Default scripts shipped with the tool (from `examples/commands/aws/`)
+2. `~/.config/aws-tools/commands/aws/` - User-defined scripts (never overwritten by install/update)
 
 A user script with the same name as a default script overrides it. Both directories are merged when listing commands — user scripts are marked with `+` in the output.
 

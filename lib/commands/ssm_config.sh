@@ -4,7 +4,7 @@ ssm_config_usage() {
   cat <<EOF
 Usage: ssm config
 
-Display current aws-ssm-tools configuration including file paths,
+Display current aws-tools configuration including file paths,
 directories, and environment variables.
 EOF
 }
@@ -15,12 +15,12 @@ ssm_config() {
     return 0
   fi
 
-  local install_dir="$HOME/.local/share/aws-ssm-tools"
-  local config_dir="$HOME/.config/aws-ssm-tools"
+  local install_dir="$HOME/.local/share/aws-tools"
+  local config_dir="$HOME/.config/aws-tools"
   local cache_dir="$HOME/.cache/ssm"
   local bin_dir="$HOME/.local/bin"
 
-  echo "aws-ssm-tools v${VERSION:-unknown}"
+  echo "aws-tools v${VERSION:-unknown}"
   echo ""
 
   # ── Installation ──

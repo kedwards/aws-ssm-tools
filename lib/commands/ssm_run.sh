@@ -2,9 +2,9 @@
 
 # Default commands/aws directories
 # Installed defaults (deployed by install.sh / update.sh from examples/commands/aws/)
-_SSM_RUN_INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools/commands/aws"
+_SSM_RUN_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/aws"
 # User-defined commands (never overwritten by install/update)
-_SSM_RUN_USER_DIR="${HOME}/.config/aws-ssm-tools/commands/aws"
+_SSM_RUN_USER_DIR="${HOME}/.config/aws-tools/commands/aws"
 
 ssm_run_usage() {
   cat <<EOF
@@ -27,8 +27,8 @@ Snippet placeholders:
   #REGION  Replaced with the current region
 
 Command directories (in priority order):
-  ~/.local/share/aws-ssm-tools/commands/aws
-  ~/.config/aws-ssm-tools/commands/aws
+  ~/.local/share/aws-tools/commands/aws
+  ~/.config/aws-tools/commands/aws
 
 Examples:
   ssm run                                    # List available commands
