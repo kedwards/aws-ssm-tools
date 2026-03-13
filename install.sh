@@ -49,14 +49,6 @@ curl -sSL "$DOWNLOAD_URL" | tar xz -C "$tmpdir"
 echo "[INFO] Copying files..."
 rsync -a --delete "${EXTRACTED_DIR}/" "${INSTALL_DIR}/"
 
-# Copy default commands from examples/commands.config to commands.config
-if [[ -f "${INSTALL_DIR}/examples/commands.config" ]]; then
-  echo "[INFO] Installing default commands..."
-  cp "${INSTALL_DIR}/examples/commands.config" "${INSTALL_DIR}/commands.config"
-else
-  echo "[WARN] examples/commands.config not found, skipping default commands"
-fi
-
 # Copy default connections from examples/connections.config to connections.config
 if [[ -f "${INSTALL_DIR}/examples/connections.config" ]]; then
   echo "[INFO] Installing default connections..."
@@ -65,13 +57,14 @@ else
   echo "[WARN] examples/connections.config not found, skipping default connections"
 fi
 
-# Deploy default run-commands from examples/run-commands/
-if [[ -d "${INSTALL_DIR}/examples/run-commands" ]]; then
-  echo "[INFO] Installing default run-commands..."
-  mkdir -p "${INSTALL_DIR}/run-commands"
-  rsync -a --delete "${INSTALL_DIR}/examples/run-commands/" "${INSTALL_DIR}/run-commands/"
+# Deploy default commands from examples/commands/
+if [[ -d "${INSTALL_DIR}/examples/commands" ]]; then
+  echo "[INFO] Installing default commands..."
+  mkdir -p "${INSTALL_DIR}/commands/aws" "${INSTALL_DIR}/commands/ssm"
+  rsync -a --delete "${INSTALL_DIR}/examples/commands/aws/" "${INSTALL_DIR}/commands/aws/"
+  rsync -a --delete "${INSTALL_DIR}/examples/commands/ssm/" "${INSTALL_DIR}/commands/ssm/"
 else
-  echo "[WARN] examples/run-commands not found, skipping default run-commands"
+  echo "[WARN] examples/commands not found, skipping default commands"
 fi
 
 # Symlink the bin/ commands
@@ -83,12 +76,10 @@ done
 
 # Note: Default configs are in INSTALL_DIR and will be loaded automatically
 # Users can create custom configs in ~/.config/aws-ssm-tools/
-echo "[INFO] Default commands available in ${INSTALL_DIR}/commands.config"
+echo "[INFO] Default commands available in ${INSTALL_DIR}/commands/"
 echo "[INFO] Default connections available in ${INSTALL_DIR}/connections.config"
-echo "[INFO] Default run-commands available in ${INSTALL_DIR}/run-commands/"
-echo "[INFO] Create custom commands in ~/.config/${REPO_NAME}/commands.user.config"
+echo "[INFO] Create custom commands in ~/.config/${REPO_NAME}/commands/"
 echo "[INFO] Create custom connections in ~/.config/${REPO_NAME}/connections.user.config"
-echo "[INFO] Create custom run-commands in ~/.config/${REPO_NAME}/run-commands/"
 
 # Show installed version
 INSTALLED_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"

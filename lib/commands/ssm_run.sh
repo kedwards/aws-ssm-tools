@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Default run-commands directories
-# Installed defaults (deployed by install.sh / update.sh from examples/run-commands/)
-_SSM_RUN_INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools/run-commands"
+# Default commands/aws directories
+# Installed defaults (deployed by install.sh / update.sh from examples/commands/aws/)
+_SSM_RUN_INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools/commands/aws"
 # User-defined commands (never overwritten by install/update)
-_SSM_RUN_USER_DIR="${HOME}/.config/aws-ssm-tools/run-commands"
+_SSM_RUN_USER_DIR="${HOME}/.config/aws-ssm-tools/commands/aws"
 
 ssm_run_usage() {
   cat <<EOF
@@ -27,8 +27,8 @@ Snippet placeholders:
   #REGION  Replaced with the current region
 
 Command directories (in priority order):
-  ${_SSM_RUN_INSTALL_DIR}
-  ${_SSM_RUN_USER_DIR}
+  ~/.local/share/aws-ssm-tools/commands/aws
+  ~/.config/aws-ssm-tools/commands/aws
 
 Examples:
   ssm run                                    # List available commands
@@ -154,7 +154,7 @@ ssm_run() {
   # No args: list available commands
   if [[ -z "${1:-}" ]]; then
     if [[ ${#cmd_dirs[@]} -eq 0 ]]; then
-      log_error "No run-commands directories found."
+      log_error "No commands directories found."
       log_error "Expected: $_SSM_RUN_INSTALL_DIR"
       log_error "Set AWS_TOOLS_CMD_DIR or use -d <path>"
       return 1

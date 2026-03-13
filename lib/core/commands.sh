@@ -1,38 +1,72 @@
 #!/usr/bin/env bash
 
+# Default commands/ssm directories
+_SSM_CMD_INSTALL_DIR="${HOME}/.local/share/aws-ssm-tools/commands/ssm"
+_SSM_CMD_USER_DIR="${HOME}/.config/aws-ssm-tools/commands/ssm"
+
 # Global arrays to store loaded commands
 COMMAND_NAMES=()
 COMMAND_DESCRIPTIONS=()
 COMMAND_STRINGS=()
 
+# Parse a command file: extract description (first comment line) and body
+_parse_command_file() {
+  local file="$1"
+  local __desc_var="$2"
+  local __body_var="$3"
+
+  local _d="" _b="" _line _first=true
+  while IFS= read -r _line || [[ -n "$_line" ]]; do
+    # Skip shebang
+    [[ "$_line" == "#!"* ]] && continue
+    # First comment line is the description
+    if $_first && [[ "$_line" =~ ^#\ *(.*) ]]; then
+      _d="${BASH_REMATCH[1]}"
+      _first=false
+      continue
+    fi
+    _first=false
+    # Skip remaining comments and blank lines
+    [[ "$_line" =~ ^# ]] && continue
+    [[ -z "$_line" ]] && continue
+    # Accumulate body
+    if [[ -n "$_b" ]]; then
+      _b="${_b}
+${_line}"
+    else
+      _b="$_line"
+    fi
+  done < "$file"
+
+  printf -v "$__desc_var" '%s' "$_d"
+  printf -v "$__body_var" '%s' "$_b"
+}
+
 aws_ssm_load_commands() {
-  local default_config="$HOME/.local/share/aws-ssm-tools/commands.config"
-  local user_config="$HOME/.config/aws-ssm-tools/commands.user.config"
-  local custom_config="${AWS_SSM_COMMAND_FILE:-}"
+  local custom_dir="${AWS_SSM_COMMAND_DIR:-}"
 
   # Reset arrays
   COMMAND_NAMES=()
   COMMAND_DESCRIPTIONS=()
   COMMAND_STRINGS=()
 
-  # Helper function to load from a single file
-  _load_from_file() {
-    local file="$1"
-    [[ ! -f "$file" ]] && return 0
+  # Helper function to load all commands from a directory
+  _load_from_dir() {
+    local dir="$1"
+    [[ ! -d "$dir" ]] && return 0
 
-    while IFS='|' read -r name desc cmd; do
-      # Skip empty lines
-      [[ -z "$name" ]] && continue
-      
-      # Skip comments
-      [[ "$name" =~ ^# ]] && continue
+    local f name desc body
+    for f in "$dir"/*; do
+      [[ -f "$f" ]] || continue
+      name=$(basename "$f")
+      _parse_command_file "$f" desc body
 
       # Check if command name already exists (override)
       local i found=false
       for i in "${!COMMAND_NAMES[@]}"; do
         if [[ "${COMMAND_NAMES[$i]}" == "$name" ]]; then
           COMMAND_DESCRIPTIONS[$i]="$desc"
-          COMMAND_STRINGS[$i]="$cmd"
+          COMMAND_STRINGS[$i]="$body"
           found=true
           break
         fi
@@ -42,15 +76,15 @@ aws_ssm_load_commands() {
       if [[ "$found" == false ]]; then
         COMMAND_NAMES+=("$name")
         COMMAND_DESCRIPTIONS+=("$desc")
-        COMMAND_STRINGS+=("$cmd")
+        COMMAND_STRINGS+=("$body")
       fi
-    done < "$file"
+    done
   }
 
-  # Load configs in order (later files override earlier ones)
-  _load_from_file "$default_config"
-  _load_from_file "$user_config"
-  [[ -n "$custom_config" && -f "$custom_config" ]] && _load_from_file "$custom_config"
+  # Load dirs in order (later dirs override earlier ones)
+  _load_from_dir "$_SSM_CMD_INSTALL_DIR"
+  _load_from_dir "$_SSM_CMD_USER_DIR"
+  [[ -n "$custom_dir" && -d "$custom_dir" ]] && _load_from_dir "$custom_dir"
 
   # Return success if any commands were loaded
   (( ${#COMMAND_NAMES[@]} > 0 ))
@@ -85,10 +119,7 @@ aws_ssm_select_command() {
   for i in "${!COMMAND_NAMES[@]}"; do
     if [[ "${COMMAND_NAMES[$i]}" == "$selected_name" ]]; then
       local cmd="${COMMAND_STRINGS[$i]}"
-      # Use bash -c to expand command substitutions while preserving structure
-      local expanded_cmd
-      expanded_cmd=$(bash -c "printf '%s' \"$cmd\"")
-      printf -v "$__result_var" '%s' "$expanded_cmd"
+      printf -v "$__result_var" '%s' "$cmd"
       return 0
     fi
   done

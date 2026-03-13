@@ -218,18 +218,27 @@ The tool uses **Granted** for AWS authentication.
 
 ### Saved Commands
 
-Commands are loaded from `lib/core/commands.sh` in the following order:
-1. `~/.local/share/aws-ssm-tools/commands.config` - Default commands (installed from `examples/commands.config`)
-2. `~/.config/aws-ssm-tools/commands.user.config` - User custom commands (never overwritten)
-3. `$AWS_SSM_COMMAND_FILE` - Custom path via environment variable
+All commands are stored as individual files under a unified `commands/` directory with two subdirectories:
+- `commands/aws/` - Commands that run locally against AWS APIs (used by `ssm run`)
+- `commands/ssm/` - Commands sent to instances via SSM (used by `ssm exec`)
 
-Later files override earlier ones. The installer copies `examples/commands.config` to the default location during install/update.
+**SSM commands** (`commands/ssm/`) are loaded from `lib/core/commands.sh` in the following order:
+1. `~/.local/share/aws-ssm-tools/commands/ssm/` - Default commands (installed from `examples/commands/ssm/`)
+2. `~/.config/aws-ssm-tools/commands/ssm/` - User custom commands (never overwritten)
+3. `$AWS_SSM_COMMAND_DIR` - Custom directory via environment variable
 
-**Format:**
+Later directories override earlier ones by filename. The installer deploys `examples/commands/ssm/` to the default location during install/update.
+
+**File format** (same for both `aws/` and `ssm/`):
 ```
-# Command format: NAME|Description|Command to execute
-disk-usage|Check disk usage|df -h
-memory-info|Display memory information|free -h
+# Description (first comment line)
+command_body_here
+```
+
+Filename = command name. Example (`commands/ssm/disk-usage`):
+```
+# Check disk usage
+df -h
 ```
 
 ### Port Forwarding
@@ -269,7 +278,7 @@ Config sections can be selected interactively via `ssm connect --config`.
 - `bash` (4.0+)
 - `aws` CLI
 - `assume` (Granted) - for AWS SSO authentication
-- `rsync` - used by install.sh/update.sh to sync run-commands
+- `rsync` - used by install.sh/update.sh to sync commands
 - BATS - for running tests
 
 **Optional:**
@@ -282,7 +291,7 @@ Config sections can be selected interactively via `ssm connect --config`.
 - `ssm login` - AWS SSO authentication via Granted
 - `ssm connect` - Shell sessions and config-based port forwarding
 - `ssm exec` - Multi-instance command execution (54 tests)
-  - Saved command support from config files
+  - Saved command support from `commands/ssm/` files
   - Interactive or CLI-driven instance selection
   - Semicolon-separated multi-instance targeting
   - Real-time polling with status updates
@@ -293,8 +302,8 @@ Config sections can be selected interactively via `ssm connect --config`.
   - Inline queries via `-q`
   - Multi-source command resolution: installed defaults + user dir (merged, user overrides)
   - Custom commands directory via `-d` or `AWS_TOOLS_CMD_DIR` (exclusive override)
-  - 11 bundled run-commands deployed to `~/.local/share/aws-ssm-tools/run-commands/`
-  - User scripts in `~/.config/aws-ssm-tools/run-commands/` (never overwritten)
+  - 11 bundled commands deployed to `~/.local/share/aws-ssm-tools/commands/aws/`
+  - User scripts in `~/.config/aws-ssm-tools/commands/aws/` (never overwritten)
   - Profile iteration with `source assume` per entry
   - Filter by profile or profile:region pairs
 - `ssm creds` - AWS credential management
@@ -311,8 +320,8 @@ The auth layer (`lib/core/aws_auth.sh`) provides two modes:
 
 ### Profile-Iteration Commands (ssm run)
 The `ssm run` command resolves scripts from multiple directories in priority order:
-1. `~/.local/share/aws-ssm-tools/run-commands/` - Default scripts shipped with the tool (from `examples/run-commands/`)
-2. `~/.config/aws-ssm-tools/run-commands/` - User-defined scripts (never overwritten by install/update)
+1. `~/.local/share/aws-ssm-tools/commands/aws/` - Default scripts shipped with the tool (from `examples/commands/aws/`)
+2. `~/.config/aws-ssm-tools/commands/aws/` - User-defined scripts (never overwritten by install/update)
 
 A user script with the same name as a default script overrides it. Both directories are merged when listing commands — user scripts are marked with `+` in the output.
 
@@ -328,7 +337,7 @@ aws ec2 describe-vpcs --query 'Vpcs[*].[...]' --output table
 **Executable scripts** (chmod +x) are full bash scripts invoked directly.
 When a filter is provided, they run once per profile after `source assume`.
 
-**Bundled run-commands** (in `examples/run-commands/`):
+**Bundled AWS commands** (in `examples/commands/aws/`):
 - `cfn-stacks` - CloudFormation stacks with status
 - `ecs-services` - ECS clusters and service status `*`
 - `engine-ami-sync` - Sync engine AMI parameter store values `*`
@@ -342,3 +351,9 @@ When a filter is provided, they run once per profile after `source assume`.
 - `vpc-cidrs` - VPC CIDRs, names and account IDs
 
 `*` = executable script (runs directly without profile iteration when no filter given)
+
+**Bundled SSM commands** (in `examples/commands/ssm/`):
+- `disk-usage` - Check disk usage
+- `memory-info` - Display memory information
+- `system-uptime` - Show system uptime
+- `docker-status` - Check Docker containers status

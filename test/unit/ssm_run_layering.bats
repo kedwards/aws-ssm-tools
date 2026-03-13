@@ -331,7 +331,7 @@ make_script() {
   run ssm_run
 
   assert_failure
-  assert_output --partial "No run-commands directories found"
+  assert_output --partial "No commands directories found"
 }
 
 @test "list: shows 'No commands found' when dirs exist but are empty" {

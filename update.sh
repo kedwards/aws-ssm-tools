@@ -56,14 +56,6 @@ curl -sSL "$DOWNLOAD_URL" | tar xz -C "$tmpdir"
 echo "[INFO] Syncing files..."
 rsync -a --delete "${EXTRACTED_DIR}/" "${INSTALL_DIR}/"
 
-# Update default commands from examples/commands.config
-if [[ -f "${INSTALL_DIR}/examples/commands.config" ]]; then
-  echo "[INFO] Updating default commands..."
-  cp "${INSTALL_DIR}/examples/commands.config" "${INSTALL_DIR}/commands.config"
-else
-  echo "[WARN] examples/commands.config not found, default commands may be outdated"
-fi
-
 # Update default connections from examples/connections.config
 if [[ -f "${INSTALL_DIR}/examples/connections.config" ]]; then
   echo "[INFO] Updating default connections..."
@@ -72,22 +64,21 @@ else
   echo "[WARN] examples/connections.config not found, default connections may be outdated"
 fi
 
-# Update default run-commands from examples/run-commands/
-if [[ -d "${INSTALL_DIR}/examples/run-commands" ]]; then
-  echo "[INFO] Updating default run-commands..."
-  mkdir -p "${INSTALL_DIR}/run-commands"
-  rsync -a --delete "${INSTALL_DIR}/examples/run-commands/" "${INSTALL_DIR}/run-commands/"
+# Update default commands from examples/commands/
+if [[ -d "${INSTALL_DIR}/examples/commands" ]]; then
+  echo "[INFO] Updating default commands..."
+  mkdir -p "${INSTALL_DIR}/commands/aws" "${INSTALL_DIR}/commands/ssm"
+  rsync -a --delete "${INSTALL_DIR}/examples/commands/aws/" "${INSTALL_DIR}/commands/aws/"
+  rsync -a --delete "${INSTALL_DIR}/examples/commands/ssm/" "${INSTALL_DIR}/commands/ssm/"
 else
-  echo "[WARN] examples/run-commands not found, default run-commands may be outdated"
+  echo "[WARN] examples/commands not found, default commands may be outdated"
 fi
 
 # User custom configs in ~/.config/aws-ssm-tools/ are preserved
-echo "[INFO] Default commands updated in ${INSTALL_DIR}/commands.config"
+echo "[INFO] Default commands updated in ${INSTALL_DIR}/commands/"
 echo "[INFO] Default connections updated in ${INSTALL_DIR}/connections.config"
-echo "[INFO] Default run-commands updated in ${INSTALL_DIR}/run-commands/"
-echo "[INFO] User custom commands preserved in ~/.config/${REPO_NAME}/commands.user.config"
+echo "[INFO] User custom commands preserved in ~/.config/${REPO_NAME}/commands/"
 echo "[INFO] User custom connections preserved in ~/.config/${REPO_NAME}/connections.user.config"
-echo "[INFO] User run-commands preserved in ~/.config/${REPO_NAME}/run-commands/"
 
 # Show new version
 NEW_VERSION="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo 'unknown')"

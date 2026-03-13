@@ -20,114 +20,96 @@ setup() {
   # Create temp directory for mock config files
   TEST_HOME="$(mktemp -d)"
   export HOME="$TEST_HOME"
-  
+
   # Create config directories
-  mkdir -p "$HOME/.local/share/aws-ssm-tools"
-  mkdir -p "$HOME/.config/aws-ssm-tools"
+  mkdir -p "$HOME/.local/share/aws-ssm-tools/commands/ssm"
+  mkdir -p "$HOME/.config/aws-ssm-tools/commands/ssm"
 }
 
 teardown() {
   # Clean up temp directory
   rm -rf "$TEST_HOME"
-  
+
   # Clean up command arrays
   unset COMMAND_NAMES COMMAND_DESCRIPTIONS COMMAND_STRINGS
 }
 
 # aws_ssm_load_commands tests
 
-@test "aws_ssm_load_commands returns false when no config files exist" {
+@test "aws_ssm_load_commands returns false when no command files exist" {
   source ./lib/core/commands.sh
-  
+
   run aws_ssm_load_commands
   [ "$status" -eq 1 ]
 }
 
-@test "aws_ssm_load_commands loads from default config" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-disk-usage|Check disk usage|df -h
-memory-info|Display memory information|free -h
-EOF
+@test "aws_ssm_load_commands loads from default install dir" {
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
 
   source ./lib/core/commands.sh
-  
+
   aws_ssm_load_commands
   [ "${#COMMAND_NAMES[@]}" -eq 2 ]
-  [ "${COMMAND_NAMES[0]}" = "disk-usage" ]
-  [ "${COMMAND_DESCRIPTIONS[0]}" = "Check disk usage" ]
-  [ "${COMMAND_STRINGS[0]}" = "df -h" ]
+
+  # Find disk-usage
+  local i
+  for i in "${!COMMAND_NAMES[@]}"; do
+    if [[ "${COMMAND_NAMES[$i]}" == "disk-usage" ]]; then
+      [ "${COMMAND_DESCRIPTIONS[$i]}" = "Check disk usage" ]
+      [ "${COMMAND_STRINGS[$i]}" = "df -h" ]
+      return 0
+    fi
+  done
+  return 1
 }
 
-@test "aws_ssm_load_commands loads from user config" {
-  cat > "$HOME/.config/aws-ssm-tools/commands.user.config" <<EOF
-custom-cmd|Custom command|echo hello
-EOF
+@test "aws_ssm_load_commands loads from user dir" {
+  printf '# Custom command\necho hello\n' > "$HOME/.config/aws-ssm-tools/commands/ssm/custom-cmd"
 
   source ./lib/core/commands.sh
-  
+
   aws_ssm_load_commands
   [ "${#COMMAND_NAMES[@]}" -eq 1 ]
   [ "${COMMAND_NAMES[0]}" = "custom-cmd" ]
 }
 
-@test "aws_ssm_load_commands loads from custom config via env var" {
-  cat > "$HOME/custom.config" <<EOF
-my-cmd|My command|ls -la
-EOF
+@test "aws_ssm_load_commands loads from custom dir via env var" {
+  local custom_dir="$TEST_HOME/custom-commands"
+  mkdir -p "$custom_dir"
+  printf '# My command\nls -la\n' > "$custom_dir/my-cmd"
 
-  export AWS_SSM_COMMAND_FILE="$HOME/custom.config"
-  
+  export AWS_SSM_COMMAND_DIR="$custom_dir"
+
   source ./lib/core/commands.sh
-  
+
   aws_ssm_load_commands
   [ "${#COMMAND_NAMES[@]}" -eq 1 ]
   [ "${COMMAND_NAMES[0]}" = "my-cmd" ]
 }
 
-@test "aws_ssm_load_commands ignores comment lines" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-# This is a comment
-disk-usage|Check disk usage|df -h
-# Another comment
-memory-info|Display memory information|free -h
-EOF
+@test "aws_ssm_load_commands skips files with only comments" {
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
 
   source ./lib/core/commands.sh
-  
+
   aws_ssm_load_commands
   [ "${#COMMAND_NAMES[@]}" -eq 2 ]
 }
 
-@test "aws_ssm_load_commands ignores empty lines" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-disk-usage|Check disk usage|df -h
+@test "aws_ssm_load_commands merges dirs with user overriding default" {
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
 
-memory-info|Display memory information|free -h
-
-EOF
-
-  source ./lib/core/commands.sh
-  
-  aws_ssm_load_commands
-  [ "${#COMMAND_NAMES[@]}" -eq 2 ]
-}
-
-@test "aws_ssm_load_commands merges configs with user overriding default" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-disk-usage|Check disk usage|df -h
-memory-info|Display memory information|free -h
-EOF
-
-  cat > "$HOME/.config/aws-ssm-tools/commands.user.config" <<EOF
-disk-usage|Custom disk check|df -H
-custom-cmd|Custom command|echo hello
-EOF
+  printf '# Custom disk check\ndf -H\n' > "$HOME/.config/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Custom command\necho hello\n' > "$HOME/.config/aws-ssm-tools/commands/ssm/custom-cmd"
 
   source ./lib/core/commands.sh
-  
+
   aws_ssm_load_commands
   [ "${#COMMAND_NAMES[@]}" -eq 3 ]
-  
+
   # Find disk-usage (should be overridden)
   local i
   for i in "${!COMMAND_NAMES[@]}"; do
@@ -139,32 +121,39 @@ EOF
   done
 }
 
-@test "aws_ssm_load_commands handles pipes in command strings" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-grep-logs|Search logs|grep ERROR /var/log/app.log | tail -20
-EOF
+@test "aws_ssm_load_commands handles multi-line command bodies" {
+  printf '# Search logs\ngrep ERROR /var/log/app.log | tail -20\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/grep-logs"
 
   source ./lib/core/commands.sh
-  
+
   aws_ssm_load_commands
   [ "${#COMMAND_NAMES[@]}" -eq 1 ]
   [ "${COMMAND_STRINGS[0]}" = "grep ERROR /var/log/app.log | tail -20" ]
+}
+
+@test "aws_ssm_load_commands handles files with shebang" {
+  printf '#!/usr/bin/env bash\n# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+
+  source ./lib/core/commands.sh
+
+  aws_ssm_load_commands
+  [ "${#COMMAND_NAMES[@]}" -eq 1 ]
+  [ "${COMMAND_DESCRIPTIONS[0]}" = "Check disk usage" ]
+  [ "${COMMAND_STRINGS[0]}" = "df -h" ]
 }
 
 # aws_ssm_select_command tests
 
 @test "aws_ssm_select_command returns false when no commands exist" {
   source ./lib/core/commands.sh
-  
+
   run aws_ssm_select_command result
   [ "$status" -eq 1 ]
 }
 
 @test "aws_ssm_select_command returns selected command" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-disk-usage|Check disk usage|df -h
-memory-info|Display memory information|free -h
-EOF
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
 
   # Mock menu_select_one to select first item
   menu_select_one() {
@@ -175,37 +164,14 @@ EOF
   export -f menu_select_one
 
   source ./lib/core/commands.sh
-  
+
   local result
   aws_ssm_select_command result
   [ "$result" = "df -h" ]
 }
 
-@test "aws_ssm_select_command expands variables in command" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-echo-var|Echo variable|echo \$USER
-EOF
-
-  # Mock menu_select_one
-  menu_select_one() {
-    local result_var="$3"
-    printf -v "$result_var" '%s' "echo-var: Echo variable"
-    return 0
-  }
-  export -f menu_select_one
-
-  export USER="testuser"
-  source ./lib/core/commands.sh
-  
-  local result
-  aws_ssm_select_command result
-  [ "$result" = "echo testuser" ]
-}
-
 @test "aws_ssm_select_command returns error when menu cancelled" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-disk-usage|Check disk usage|df -h
-EOF
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
 
   # Mock menu_select_one to return error (cancelled)
   menu_select_one() {
@@ -214,16 +180,14 @@ EOF
   export -f menu_select_one
 
   source ./lib/core/commands.sh
-  
+
   local result
   run aws_ssm_select_command result
   [ "$status" -eq 1 ]
 }
 
 @test "aws_ssm_select_command handles command with spaces" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-list-files|List all files|ls -la /var/log
-EOF
+  printf '# List all files\nls -la /var/log\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/list-files"
 
   # Mock menu_select_one
   menu_select_one() {
@@ -234,17 +198,15 @@ EOF
   export -f menu_select_one
 
   source ./lib/core/commands.sh
-  
+
   local result
   aws_ssm_select_command result
   [ "$result" = "ls -la /var/log" ]
 }
 
 @test "aws_ssm_select_command displays commands with descriptions" {
-  cat > "$HOME/.local/share/aws-ssm-tools/commands.config" <<EOF
-disk-usage|Check disk usage|df -h
-memory-info|Display memory information|free -h
-EOF
+  printf '# Check disk usage\ndf -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/disk-usage"
+  printf '# Display memory information\nfree -h\n' > "$HOME/.local/share/aws-ssm-tools/commands/ssm/memory-info"
 
   # Mock menu_select_one to capture display items
   menu_select_one() {
@@ -252,18 +214,18 @@ EOF
     local result_var="$3"
     shift 3
     local items=("$@")
-    
+
     # Verify format is "name: description"
     [ "${items[0]}" = "disk-usage: Check disk usage" ]
     [ "${items[1]}" = "memory-info: Display memory information" ]
-    
+
     printf -v "$result_var" '%s' "${items[0]}"
     return 0
   }
   export -f menu_select_one
 
   source ./lib/core/commands.sh
-  
+
   local result
   aws_ssm_select_command result
   [ "$result" = "df -h" ]

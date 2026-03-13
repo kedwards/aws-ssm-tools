@@ -108,6 +108,19 @@ SCRIPT
   assert_output --partial "Commands directory not found"
 }
 
+@test "ssm_run fails when no commands directories exist" {
+  unset AWS_TOOLS_CMD_DIR
+  # Override HOME so default dirs don't exist
+  export HOME="$TEST_TMPDIR/emptyhome"
+  mkdir -p "$HOME"
+  source ./lib/commands/ssm_run.sh
+
+  run ssm_run
+
+  assert_failure
+  assert_output --partial "No commands directories found"
+}
+
 # --- Executable scripts ---
 
 @test "ssm_run runs executable script directly without filter" {
