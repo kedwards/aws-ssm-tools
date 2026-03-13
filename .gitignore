@@ -18,5 +18,8 @@
 *.tar.gz
 *.zip
 
+# Deployed commands (auto-generated from examples/commands/)
+/commands/
+
 # Local testing
 .cache/
