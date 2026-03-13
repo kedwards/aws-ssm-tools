@@ -137,19 +137,19 @@ Users can update to a specific version:
 
 ```bash
 # Update to latest release
-ssm update
+awst update
 
 # Update to specific version
-ssm update v1.3.1
+awst update v1.3.1
 
 # Update to main branch
-ssm update main
+awst update main
 ```
 
 ### Checking Installed Version
 
 ```bash
-ssm --version
+awst --version
 ```
 
 ## Release Checklist
@@ -245,7 +245,7 @@ git push origin main --force
 1. Work on feature branches
 2. Submit PRs to `main`
 3. Maintainers will handle releases
-4. Update to the latest version: `ssm update`
+4. Update to the latest version: `awst update`
 
 ## Version History
 

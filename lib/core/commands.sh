@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Default commands/ssm directories
-_SSM_CMD_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/ssm"
-_SSM_CMD_USER_DIR="${HOME}/.config/aws-tools/commands/ssm"
+_AWST_SSM_CMD_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/ssm"
+_AWST_SSM_CMD_USER_DIR="${HOME}/.config/aws-tools/commands/ssm"
 
 # Global arrays to store loaded commands
 COMMAND_NAMES=()
@@ -42,8 +42,8 @@ ${_line}"
   printf -v "$__body_var" '%s' "$_b"
 }
 
-aws_ssm_load_commands() {
-  local custom_dir="${AWS_SSM_COMMAND_DIR:-}"
+awst_load_ssm_commands() {
+  local custom_dir="${AWST_SSM_CMD_DIR:-}"
 
   # Reset arrays
   COMMAND_NAMES=()
@@ -82,19 +82,19 @@ aws_ssm_load_commands() {
   }
 
   # Load dirs in order (later dirs override earlier ones)
-  _load_from_dir "$_SSM_CMD_INSTALL_DIR"
-  _load_from_dir "$_SSM_CMD_USER_DIR"
+  _load_from_dir "$_AWST_SSM_CMD_INSTALL_DIR"
+  _load_from_dir "$_AWST_SSM_CMD_USER_DIR"
   [[ -n "$custom_dir" && -d "$custom_dir" ]] && _load_from_dir "$custom_dir"
 
   # Return success if any commands were loaded
   (( ${#COMMAND_NAMES[@]} > 0 ))
 }
 
-aws_ssm_select_command() {
+awst_select_ssm_command() {
   local __result_var="$1"
 
   # Load commands
-  if ! aws_ssm_load_commands; then
+  if ! awst_load_ssm_commands; then
     log_warn "No saved commands found"
     return 1
   fi

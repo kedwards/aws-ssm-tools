@@ -2,13 +2,13 @@
 
 # Default commands/aws directories
 # Installed defaults (deployed by install.sh / update.sh from examples/commands/aws/)
-_SSM_RUN_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/aws"
+_AWST_RUN_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/aws"
 # User-defined commands (never overwritten by install/update)
-_SSM_RUN_USER_DIR="${HOME}/.config/aws-tools/commands/aws"
+_AWST_RUN_USER_DIR="${HOME}/.config/aws-tools/commands/aws"
 
-ssm_run_usage() {
+awst_run_usage() {
   cat <<EOF
-Usage: ssm run [flags] <name|command> [filter]
+Usage: awst run [flags] <name|command> [filter]
 
 Run a command or script against one or more AWS profiles.
 
@@ -31,25 +31,25 @@ Command directories (in priority order):
   ~/.config/aws-tools/commands/aws
 
 Examples:
-  ssm run                                    # List available commands
-  ssm run vpc-cidrs "fail how"               # Run snippet across profiles
-  ssm run instances                          # Run executable script
-  ssm run instances "wtf:us-west-2"          # Run script for specific profile/region
-  ssm run -q "aws s3 ls" "wtf ninja"         # Inline query across profiles
-  ssm run -d /path/to/commands my-script     # Custom commands directory
+  awst run                                    # List available commands
+  awst run vpc-cidrs "fail how"               # Run snippet across profiles
+  awst run instances                          # Run executable script
+  awst run instances "wtf:us-west-2"          # Run script for specific profile/region
+  awst run -q "aws s3 ls" "wtf ninja"         # Inline query across profiles
+  awst run -d /path/to/commands my-script     # Custom commands directory
 EOF
 }
 
 # List commands merged from one or more directories.
 # Dirs are given in ascending priority order — later entries override earlier ones.
-ssm_run_list_commands() {
+awst_run_list_commands() {
   local -a dirs=("$@")
   local -A cmd_desc cmd_marks
 
   for dir in "${dirs[@]}"; do
     [[ -d "$dir" ]] || continue
     local is_user=false
-    [[ "$dir" == "$_SSM_RUN_USER_DIR" ]] && is_user=true
+    [[ "$dir" == "$_AWST_RUN_USER_DIR" ]] && is_user=true
 
     for f in "$dir"/*; do
       [[ -f "$f" ]] || continue
@@ -93,12 +93,12 @@ ssm_run_list_commands() {
     fi
   done
   [[ -n "$legend" ]] && echo "  $legend" && echo ""
-  echo "Run 'ssm run --help' for usage examples."
+  echo "Run 'awst run --help' for usage examples."
 }
 
 # Resolve the script file for a command name.
 # Dirs are checked from last to first (highest priority first).
-ssm_run_resolve_script() {
+awst_run_resolve_script() {
   local name="$1"
   shift
   local -a dirs=("$@")
@@ -110,7 +110,7 @@ ssm_run_resolve_script() {
   return 1
 }
 
-ssm_run() {
+awst_run() {
   local query="" custom_dir=""
   local positionals=()
 
@@ -119,14 +119,14 @@ ssm_run() {
     case "$1" in
       -q) query="$2"; shift 2 ;;
       -d) custom_dir="$2"; shift 2 ;;
-      -h|--help) ssm_run_usage; return 0 ;;
+      -h|--help) awst_run_usage; return 0 ;;
       *)  positionals+=("$1"); shift ;;
     esac
   done
   set -- "${positionals[@]+${positionals[@]}}"
 
   # Build the list of command directories to search.
-  # -d flag or AWS_TOOLS_CMD_DIR override: use only that directory (exclusive).
+  # -d flag or AWST_CMD_DIR override: use only that directory (exclusive).
   # Otherwise: merge installed defaults + user dir (user takes precedence).
   local -a cmd_dirs=()
   if [[ -n "$custom_dir" ]]; then
@@ -135,15 +135,15 @@ ssm_run() {
       return 1
     fi
     cmd_dirs=("$custom_dir")
-  elif [[ -n "${AWS_TOOLS_CMD_DIR:-}" ]]; then
-    if [[ ! -d "$AWS_TOOLS_CMD_DIR" ]]; then
-      log_error "Commands directory not found: $AWS_TOOLS_CMD_DIR"
+  elif [[ -n "${AWST_CMD_DIR:-}" ]]; then
+    if [[ ! -d "$AWST_CMD_DIR" ]]; then
+      log_error "Commands directory not found: $AWST_CMD_DIR"
       return 1
     fi
-    cmd_dirs=("$AWS_TOOLS_CMD_DIR")
+    cmd_dirs=("$AWST_CMD_DIR")
   else
-    [[ -d "$_SSM_RUN_INSTALL_DIR" ]] && cmd_dirs+=("$_SSM_RUN_INSTALL_DIR")
-    [[ -d "$_SSM_RUN_USER_DIR" ]]    && cmd_dirs+=("$_SSM_RUN_USER_DIR")
+    [[ -d "$_AWST_RUN_INSTALL_DIR" ]] && cmd_dirs+=("$_AWST_RUN_INSTALL_DIR")
+    [[ -d "$_AWST_RUN_USER_DIR" ]]    && cmd_dirs+=("$_AWST_RUN_USER_DIR")
   fi
 
   # Quick query — treat as an inline command (supports optional filter)
@@ -155,11 +155,11 @@ ssm_run() {
   if [[ -z "${1:-}" ]]; then
     if [[ ${#cmd_dirs[@]} -eq 0 ]]; then
       log_error "No commands directories found."
-      log_error "Expected: $_SSM_RUN_INSTALL_DIR"
-      log_error "Set AWS_TOOLS_CMD_DIR or use -d <path>"
+      log_error "Expected: $_AWST_RUN_INSTALL_DIR"
+      log_error "Set AWST_CMD_DIR or use -d <path>"
       return 1
     fi
-    ssm_run_list_commands "${cmd_dirs[@]}"
+    awst_run_list_commands "${cmd_dirs[@]}"
     return 0
   fi
 
@@ -167,7 +167,7 @@ ssm_run() {
 
   # Resolve script: user dir takes precedence over installed defaults
   local script=""
-  script=$(ssm_run_resolve_script "$name" "${cmd_dirs[@]}" 2>/dev/null) || true
+  script=$(awst_run_resolve_script "$name" "${cmd_dirs[@]}" 2>/dev/null) || true
 
   local is_executable=false
   [[ -n "$script" && -x "$script" ]] && is_executable=true

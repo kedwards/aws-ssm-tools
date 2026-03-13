@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-aws_ssm_start_shell() {
+awst_ssm_start_shell() {
   local instance_id="$1"
   aws ssm start-session --target "$instance_id"
 }
 
-aws_ssm_start_port_forward() {
+awst_ssm_start_port_forward() {
   local instance_id="$1"
   local host="$2"
   local port="$3"

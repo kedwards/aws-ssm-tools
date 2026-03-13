@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-ssm_exec_usage() {
+awst_exec_usage() {
   cat <<EOF
-Usage: ssm exec [OPTIONS]
+Usage: awst exec [OPTIONS]
 
 Run a shell command via AWS SSM on one or more instances.
 
@@ -15,35 +15,35 @@ Options:
 
 Examples:
   # Run command on single instance (by name)
-  ssm exec -c 'df -h' -i KeyMaster
+  awst exec -c 'df -h' -i KeyMaster
 
   # Run command on single instance (by ID)
-  ssm exec -c 'df -h' -i i-1234567890abcdef0
+  awst exec -c 'df -h' -i i-1234567890abcdef0
 
   # Run command on multiple instances
-  ssm exec -c 'df -h' -i KeyMaster,Admin,i-1234567890abcdef0
+  awst exec -c 'df -h' -i KeyMaster,Admin,i-1234567890abcdef0
 
   # Interactive instance selection
-  ssm exec -c 'uptime'
+  awst exec -c 'uptime'
 
   # Fully interactive (select command and instances)
-  ssm exec
+  awst exec
 EOF
 }
 
-ssm_exec() {
+awst_exec() {
   ensure_aws_cli || return 1
 
   parse_common_flags "$@" || return 1
 
   if [[ "${SHOW_HELP:-false}" == true ]]; then
-    ssm_exec_usage
+    awst_exec_usage
     return 0
   fi
 
   # Command: saved or typed
   if [[ -z "${COMMAND_ARG:-}" ]]; then
-    if ! aws_ssm_select_command COMMAND_ARG; then
+    if ! awst_select_ssm_command COMMAND_ARG; then
       log_error "No command selected"
       return 1
     fi
@@ -130,7 +130,7 @@ ssm_exec() {
 
   # Create JSON using jq to properly escape everything
   local tmpfile
-  tmpfile=$(mktemp /tmp/ssm-script.XXXXXX)
+  tmpfile=$(mktemp /tmp/awst-script.XXXXXX)
   trap 'rm -f "${tmpfile:-}"' EXIT
 
   jq -n \

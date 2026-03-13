@@ -4,8 +4,8 @@
 # Commands are sent to remote instances for execution — expansion happens there.
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 setup() {
   # Stub logging
@@ -47,7 +47,7 @@ _setup_select() {
 @test "returns simple command as-is" {
   _setup_select "uptime" "Show uptime" "uptime"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "uptime" ]
 }
 
@@ -62,7 +62,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" == *'$USER'* ]]
 }
 
@@ -77,42 +77,42 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" =~ \$\( ]]
 }
 
 @test "preserves pipes in command body" {
   _setup_select "grep-logs" "Search logs" "grep ERROR /var/log/app.log | tail -10"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "grep ERROR /var/log/app.log | tail -10" ]
 }
 
 @test "preserves conditionals in command body" {
   _setup_select "conditional" "Conditional check" "[ -f /tmp/test ] && echo exists || echo missing"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "[ -f /tmp/test ] && echo exists || echo missing" ]
 }
 
 @test "preserves redirections" {
   _setup_select "redirect" "Redirect output" "echo test > /tmp/output.txt 2>&1"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "echo test > /tmp/output.txt 2>&1" ]
 }
 
 @test "preserves semicolon-separated commands" {
   _setup_select "multi-cmd" "Multiple commands" "cd /tmp; ls -la; pwd"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "cd /tmp; ls -la; pwd" ]
 }
 
 @test "preserves glob patterns" {
   _setup_select "glob-pattern" "Glob pattern" "ls /var/log/*.log"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "ls /var/log/*.log" ]
 }
 
@@ -127,7 +127,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   # Body should contain the if/then/fi structure
   [[ "$result" =~ "if " ]]
   [[ "$result" =~ "fi" ]]

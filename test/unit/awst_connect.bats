@@ -2,8 +2,8 @@
 # shellcheck disable=SC2329,SC2030,SC2031
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 load '../helpers/bats-support/load'
 load '../helpers/bats-assert/load'
@@ -33,7 +33,7 @@ setup() {
   # menu dependency (REAL implementation)
   source ./lib/menu/index.sh
   source ./lib/core/flags.sh
-  source ./lib/commands/ssm_connect.sh
+  source ./lib/commands/awst_connect.sh
 
   # aws/ec2 stub
   aws_ec2_select_instance() {
@@ -45,7 +45,7 @@ setup() {
   }
 
   # aws ssm stub
-  aws_ssm_start_shell() {
+  awst_ssm_start_shell() {
     echo "SSM_SHELL $1"
   }
 }
@@ -55,7 +55,7 @@ setup() {
   export MENU_ASSUME_FIRST=1
   export CONFIG_MODE=false
 
-  run ssm_connect
+  run awst_connect
 
   assert_success
   assert_output --partial "SSM_SHELL i-1234567890"
@@ -66,10 +66,10 @@ setup() {
   unset -f parse_common_flags
   source ./lib/core/flags.sh
 
-  run ssm_connect --help
+  run awst_connect --help
 
   assert_success
-  assert_output --partial "Usage: ssm connect"
+  assert_output --partial "Usage: awst connect"
 }
 
 @test "ssm connect includes profile and region in subheader" {
@@ -88,7 +88,7 @@ setup() {
     echo "test-instance i-1234567890"
   }
 
-  run ssm_connect
+  run awst_connect
 
   assert_success
   assert_output --partial "SSM_SHELL i-1234567890"

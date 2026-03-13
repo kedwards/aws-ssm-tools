@@ -10,17 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.0] - 2026-03-13
 
 ### Added
-- **`ssm login`** - Authenticate with AWS via Granted (`source assume`)
-  - Interactive profile/region selection or explicit via `-p`/`-r` flags
-  - New `aws_auth_login()` function that actively calls `source assume`
-- **`ssm run`** - Run commands/scripts across multiple AWS profiles (integrated from aws-tools)
+- **`awst run`** - Run commands/scripts across multiple AWS profiles (integrated from aws-tools)
   - Snippet files with `#ENV`/`#REGION` placeholder substitution
   - Executable scripts (run directly or iterated per-profile)
   - Inline queries via `-q` flag
-  - Custom commands directory via `-d` flag or `AWS_TOOLS_CMD_DIR` env var
+  - Custom commands directory via `-d` flag or `AWST_CMD_DIR` env var
   - Profile iteration with `source assume` per entry
   - Filter by profile name or `profile:region` pairs
-- **`ssm creds`** - AWS credential management
+- **`awst creds`** - AWS credential management
   - `store <env>` - Capture credentials via Granted into shell env vars
   - `use` - Re-apply stored AK/SK/ST as AWS\_ env vars
 - **Auth layer upgrade** - `aws_auth_assume()` now supports auto-login via `AWS_AUTH_AUTO_LOGIN=1`
@@ -38,10 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Core Commands**
-  - `ssm connect` - Start SSM shell sessions or port forwarding to EC2 instances
-  - `ssm exec` - Execute commands on multiple instances simultaneously with real-time polling
-  - `ssm list` - List active SSM sessions on the current host
-  - `ssm kill` - Terminate active SSM sessions
+  - `awst connect` - Start SSM shell sessions or port forwarding to EC2 instances
+  - `awst exec` - Execute commands on multiple instances simultaneously with real-time polling
+  - `awst list` - List active SSM sessions on the current host
+  - `awst kill` - Terminate active SSM sessions
 
 - **Authentication**
   - Integration with [Granted](https://granted.dev) for AWS SSO authentication
@@ -58,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Command library system with user and system commands
   - Default commands installed from `examples/commands.config`
   - User custom commands in `~/.config/aws-tools/commands.user.config`
-  - Environment variable override support (`AWS_SSM_COMMAND_FILE`)
+  - Environment variable override support (`AWST_SSM_CMD_FILE`)
 
 - **Port Forwarding**
   - Config-based port forwarding with INI-style configuration

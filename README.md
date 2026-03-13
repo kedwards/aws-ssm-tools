@@ -43,7 +43,7 @@ This installs to `~/.local/share/aws-tools` with symlinks in `~/.local/bin`.
 ### Check Version
 
 ```bash
-ssm --version
+awst --version
 ```
 
 ## Prerequisites
@@ -66,83 +66,67 @@ All commands authenticate automatically — no pre-login required. If no credent
 
 ```bash
 # Interactive profile/region selection + instance selection
-ssm connect
+awst connect
 
 # Direct connection with specific profile
-ssm connect -p prod -r us-east-1
+awst connect -p prod -r us-east-1
 
 # Config-based port forwarding
-ssm connect --config
+awst connect --config
 ```
 
 ### 2. Execute Commands
 
 ```bash
 # Interactive: select command and instances
-ssm exec
+awst exec
 
 # Explicit command on multiple instances
-ssm exec -c "uptime" -i "web-server;db-server"
+awst exec -c "uptime" -i "web-server;db-server"
 
 # Use saved command with specific profile
-ssm exec -c disk-usage -i prod-app -p prod -r us-east-1
+awst exec -c disk-usage -i prod-app -p prod -r us-east-1
 ```
 
 ### 4. Run Across Profiles
 
 ```bash
 # List available commands
-ssm run
+awst run
 
 # Run a saved snippet across profiles
-ssm run vpc-cidrs "dev prod"
+awst run vpc-cidrs "dev prod"
 
 # Run inline query
-ssm run -q "aws s3 ls" "staging:us-west-2"
+awst run -q "aws s3 ls" "staging:us-west-2"
 
 # Run executable script
-ssm run instances
+awst run instances
 ```
 
 ### 5. Credential Management
 
 ```bash
 # Store credentials for an environment
-eval "$(ssm creds store myenv)"
+eval "$(awst creds store myenv)"
 
 # Re-apply stored credentials
-eval "$(ssm creds use)"
+eval "$(awst creds use)"
 ```
 
 ### 6. Manage Sessions
 
 ```bash
 # List active sessions
-ssm list
+awst list
 
 # Terminate sessions
-ssm kill
+awst kill
 ```
 
 ## Commands
 
-### `ssm login`
-Authenticate with AWS via Granted (`assume`).
-
-**Options:**
-- `-p, --profile` - AWS profile to assume
-- `-r, --region` - AWS region
-
-**Examples:**
-```bash
-# Interactive profile/region selection
-ssm login
-
-# Login to specific profile and region
-ssm login -p prod -r us-west-2
-```
-
-### `ssm connect`
+### `awst connect`
 Start an SSM shell session or port forwarding to an EC2 instance.
 
 **Options:**
@@ -155,13 +139,13 @@ Start an SSM shell session or port forwarding to an EC2 instance.
 **Examples:**
 ```bash
 # Interactive instance selection
-ssm connect -p prod
+awst connect -p prod
 
 # Config-based port forwarding
-ssm connect --config -f ~/.ports.cfg
+awst connect --config -f ~/.ports.cfg
 ```
 
-### `ssm exec`
+### `awst exec`
 Execute a command on one or more EC2 instances via SSM.
 
 **Options:**
@@ -175,16 +159,16 @@ Execute a command on one or more EC2 instances via SSM.
 **Examples:**
 ```bash
 # Interactive command and instance selection
-ssm exec
+awst exec
 
 # Explicit command on multiple instances
-ssm exec -c "df -h" -i "web1;web2;web3"
+awst exec -c "df -h" -i "web1;web2;web3"
 
 # Use saved command
-ssm exec -c system-uptime -p prod
+awst exec -c system-uptime -p prod
 ```
 
-### `ssm run`
+### `awst run`
 Run a command or script against one or more AWS profiles.
 
 **Options:**
@@ -195,7 +179,7 @@ Run a command or script against one or more AWS profiles.
 1. `~/.local/share/aws-tools/run-commands/` — default scripts shipped with the tool
 2. `~/.config/aws-tools/run-commands/` — your custom scripts (never overwritten by updates)
 
-User scripts with the same name as a default script override the default. Use `-d` or `AWS_TOOLS_CMD_DIR` for an exclusive single-directory override.
+User scripts with the same name as a default script override the default. Use `-d` or `AWST_CMD_DIR` for an exclusive single-directory override.
 
 **Filters:**
 Space-separated profile names or `profile:region` pairs. When no filter is given, saved commands iterate all profiles. Default region is `us-east-1`.
@@ -207,28 +191,28 @@ Space-separated profile names or `profile:region` pairs. When no filter is given
 **Examples:**
 ```bash
 # List available commands
-ssm run
+awst run
 
 # Run snippet across profiles
-ssm run vpc-cidrs "dev prod"
+awst run vpc-cidrs "dev prod"
 
 # Run with profile:region pairs
-ssm run cfn-stacks "prod:us-east-1 staging:us-west-2"
+awst run cfn-stacks "prod:us-east-1 staging:us-west-2"
 
 # Inline query
-ssm run -q "aws s3 ls" "prod staging"
+awst run -q "aws s3 ls" "prod staging"
 
 # Run executable script directly
-ssm run instances
+awst run instances
 
 # Run executable per profile
-ssm run instances "dev:us-west-2"
+awst run instances "dev:us-west-2"
 
 # Custom commands directory (exclusive override)
-ssm run -d /path/to/commands my-script
+awst run -d /path/to/commands my-script
 ```
 
-### `ssm creds`
+### `awst creds`
 Manage AWS credentials for the current shell.
 
 **Subcommands:**
@@ -238,57 +222,57 @@ Manage AWS credentials for the current shell.
 **Examples:**
 ```bash
 # Store credentials
-eval "$(ssm creds store myenv)"
+eval "$(awst creds store myenv)"
 
 # Re-apply stored credentials
-eval "$(ssm creds use)"
+eval "$(awst creds use)"
 ```
 
-### `ssm list`
+### `awst list`
 List active SSM sessions on the current host.
 
 **Example:**
 ```bash
-ssm list
+awst list
 ```
 
-### `ssm kill`
+### `awst kill`
 Terminate active SSM sessions.
 
 **Examples:**
 ```bash
 # Interactive selection
-ssm kill
+awst kill
 
 # Kill all sessions (with confirmation)
-ssm kill --all
+awst kill --all
 ```
 
-### `ssm update`
+### `awst update`
 Update aws-tools to a specific version or the latest release.
 
 **Examples:**
 ```bash
 # Update to latest release
-ssm update
+awst update
 
 # Update to specific version
-ssm update v1.3.1
+awst update v1.3.1
 
 # Update to development branch
-ssm update main
+awst update main
 ```
 
 ## Configuration
 
-### Saved Commands (`ssm exec`)
+### Saved Commands (`awst exec`)
 
 Default commands are installed to `~/.local/share/aws-tools/commands.config` from `examples/commands.config`.
 
 You can override or add commands in these locations (checked in order):
 1. `~/.local/share/aws-tools/commands.config` (default commands, updated on install/update)
 2. `~/.config/aws-tools/commands.user.config` (your custom commands, never overwritten)
-3. Custom path via `$AWS_SSM_COMMAND_FILE` environment variable
+3. Custom path via `$AWST_SSM_CMD_FILE` environment variable
 
 **Format:**
 ```
@@ -309,7 +293,7 @@ restart-app|Restart application|systemctl restart myapp
 EOF
 ```
 
-### Run Commands (`ssm run`)
+### Run Commands (`awst run`)
 
 Default run-commands are installed to `~/.local/share/aws-tools/run-commands/` from `examples/run-commands/`.
 
@@ -350,7 +334,7 @@ EOF
 chmod +x ~/.config/aws-tools/run-commands/my-script
 ```
 
-User scripts with the same name as a bundled script override the bundled version (shown with `+` in `ssm run` listing).
+User scripts with the same name as a bundled script override the bundled version (shown with `+` in `awst run` listing).
 
 ### Port Forwarding Config
 
@@ -376,7 +360,7 @@ local_port = 6379
 
 Then use:
 ```bash
-ssm connect --config
+awst connect --config
 ```
 
 ## Environment Variables
@@ -390,28 +374,28 @@ ssm connect --config
 ### Behavior
 - `MENU_NON_INTERACTIVE` - Disable interactive prompts
 - `MENU_NO_FZF` - Force bash `select` instead of fzf
-- `AWS_SSM_COMMAND_FILE` - Custom commands file path
-- `AWS_TOOLS_CMD_DIR` - Exclusive single-directory override for `ssm run` (bypasses default + user dir merging)
-- `AWS_AUTH_DISABLE_ASSUME` - Set to `1` to skip assume calls (for testing)
+- `AWST_SSM_CMD_FILE` - Custom commands file path
+- `AWST_CMD_DIR` - Exclusive single-directory override for `awst run` (bypasses default + user dir merging)
+- `AWST_AUTH_DISABLE_ASSUME` - Set to `1` to skip assume calls (for testing)
 
 ## Updating
 
 Update to the latest release:
 
 ```bash
-ssm update
+awst update
 ```
 
 Update to a specific version:
 
 ```bash
-ssm update v1.3.1
+awst update v1.3.1
 ```
 
 Update to development version (main branch):
 
 ```bash
-ssm update main
+awst update main
 ```
 
 ## PATH Configuration
@@ -447,10 +431,10 @@ task test
 bats test/unit/
 
 # Run specific test file
-bats test/unit/ssm_exec.bats
+bats test/unit/awst_exec.bats
 
 # Run specific test
-bats test/unit/ssm_exec.bats -f "polls for command completion"
+bats test/unit/awst_exec.bats -f "polls for command completion"
 ```
 
 ### Linting
@@ -494,12 +478,12 @@ See [RELEASE.md](RELEASE.md) for detailed release management documentation.
 
 All commands auto-login when a profile is provided. If you see this error, pass a profile:
 ```bash
-ssm connect -p your-profile -r us-east-1
+awst connect -p your-profile -r us-east-1
 ```
 
-Or log in explicitly:
+Or authenticate with Granted directly:
 ```bash
-ssm login -p your-profile -r us-east-1
+assume your-profile -r us-east-1
 ```
 
 ### "session-manager-plugin not found"

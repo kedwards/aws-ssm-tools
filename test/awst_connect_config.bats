@@ -37,7 +37,7 @@ setup() {
   source ./lib/menu/index.sh
 
   # config helper stub
-  aws_ssm_config_get() {
+  awst_config_get() {
     local _file="$1"
     local _section="$2"
     local key="$3"
@@ -55,7 +55,7 @@ setup() {
   }
 
   # SSM stub
-  aws_ssm_start_shell() {
+  awst_ssm_start_shell() {
     echo "SSM_SHELL $1"
   }
 
@@ -65,18 +65,18 @@ setup() {
   }
 
   # SSM stub
-  aws_ssm_start_port_forward() {
+  awst_ssm_start_port_forward() {
     echo "SSM_PORT_FORWARD $1 $2 $3 $4"
   }
 
-  source ./lib/commands/ssm_connect.sh
+  source ./lib/commands/awst_connect.sh
 }
 
 @test "ssm connect config mode starts port forward" {
   export CONFIG_MODE=true
   export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/ssmf.cfg"
 
-  run ssm_connect
+  run awst_connect
 
   assert_success
   assert_output --partial "SSM_PORT_FORWARD i-1234567890 localhost 5432 15432"
@@ -90,7 +90,7 @@ setup() {
   export CONFIG_MODE=true
   export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/empty.cfg"
 
-  run ssm_connect
+  run awst_connect
 
   assert_failure
   
@@ -100,7 +100,7 @@ setup() {
 
 @test "ssm connect config mode works without profile in config" {
   # Override stub to return empty profile
-  aws_ssm_config_get() {
+  awst_config_get() {
     local _file="$1"
     local _section="$2"
     local key="$3"
@@ -126,7 +126,7 @@ setup() {
   export CONFIG_MODE=true
   export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/no-profile.cfg"
 
-  run ssm_connect
+  run awst_connect
 
   assert_success
   assert_output --partial "SSM_PORT_FORWARD i-1234567890 localhost 5432 15432"
@@ -134,7 +134,7 @@ setup() {
 
 @test "ssm connect config mode uses AWS_PROFILE when no profile in config" {
   # Override stub to return empty profile
-  aws_ssm_config_get() {
+  awst_config_get() {
     local _file="$1"
     local _section="$2"
     local key="$3"
@@ -161,7 +161,7 @@ setup() {
   export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/no-profile.cfg"
   export AWS_PROFILE="my-current-profile"
 
-  run ssm_connect
+  run awst_connect
 
   assert_success
   # Verify it still works with current profile
@@ -170,7 +170,7 @@ setup() {
 
 @test "ssm connect config mode overrides current profile when profile in config" {
   # Normal stub with profile specified
-  aws_ssm_config_get() {
+  awst_config_get() {
     local _file="$1"
     local _section="$2"
     local key="$3"
@@ -198,7 +198,7 @@ setup() {
   export CONFIG_FILE="$BATS_TEST_DIRNAME/fixtures/ssmf.cfg"
   export AWS_PROFILE="different-profile"
 
-  run ssm_connect
+  run awst_connect
 
   assert_success
   # Verify the config profile takes precedence

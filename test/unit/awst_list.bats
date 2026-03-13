@@ -2,8 +2,8 @@
 # shellcheck disable=SC2034
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 setup() {
   # Stub logging
@@ -36,28 +36,28 @@ teardown() {
   rm -f "$PS_OUTPUT_FILE"
 }
 
-# ssm_list tests
+# awst_list tests
 
-@test "ssm_list shows help with --help" {
-  source ./lib/commands/ssm_list.sh
+@test "awst_list shows help with --help" {
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list --help
+  run awst_list --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage: ssm list" ]]
+  [[ "$output" =~ "Usage: awst list" ]]
 }
 
-@test "ssm_list shows no sessions when none found" {
+@test "awst_list shows no sessions when none found" {
   # Empty ps output
   echo "" > "$PS_OUTPUT_FILE"
   
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "none found" ]]
 }
 
-@test "ssm_list parses shell session" {
+@test "awst_list parses shell session" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-abc123
 EOF
@@ -66,16 +66,16 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "12345" ]]
   [[ "$output" =~ "Interactive Shell" ]]
   [[ "$output" =~ "i-abc123" ]]
 }
 
-@test "ssm_list parses port forwarding to remote host" {
+@test "awst_list parses port forwarding to remote host" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartPortForwardingSessionToRemoteHost --target i-abc123 --parameters {"host":["rds.example.com"],"localPortNumber":["5432"],"portNumber":["5432"]}
 EOF
@@ -83,9 +83,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "12345" ]]
   [[ "$output" =~ "Port: 5432" ]]
@@ -93,7 +93,7 @@ EOF
   [[ "$output" =~ "i-abc123" ]]
 }
 
-@test "ssm_list extracts target from --target flag" {
+@test "awst_list extracts target from --target flag" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-xyz789
 EOF
@@ -101,14 +101,14 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "i-xyz789" ]]
 }
 
-@test "ssm_list extracts target from JSON when no --target flag" {
+@test "awst_list extracts target from JSON when no --target flag" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {"TargetId":"i-json123"} us-east-1 StartSession
 EOF
@@ -116,14 +116,14 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "i-json123" ]]
 }
 
-@test "ssm_list resolves instance names via EC2" {
+@test "awst_list resolves instance names via EC2" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-abc123
 EOF
@@ -138,15 +138,15 @@ EOF
   }
   export -f aws
 
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "my-web-server" ]]
   [[ "$output" =~ "i-abc123" ]]
 }
 
-@test "ssm_list handles multiple sessions" {
+@test "awst_list handles multiple sessions" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-aaa111
 user     12346  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-bbb222
@@ -155,9 +155,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_list.sh
+  source ./lib/commands/awst_list.sh
   
-  run ssm_list
+  run awst_list
   [ "$status" -eq 0 ]
   [[ "$output" =~ "12345" ]]
   [[ "$output" =~ "12346" ]]

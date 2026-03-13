@@ -2,8 +2,8 @@
 # shellcheck disable=SC2329,SC2030,SC2031
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 load '../helpers/bats-support/load'
 load '../helpers/bats-assert/load'
@@ -221,8 +221,8 @@ teardown() {
   assert_output --partial "'assume' (Granted) not found in PATH"
 }
 
-@test "aws_auth_login succeeds when AWS_AUTH_DISABLE_ASSUME is set" {
-  export AWS_AUTH_DISABLE_ASSUME=1
+@test "aws_auth_login succeeds when AWST_AUTH_DISABLE_ASSUME is set" {
+  export AWST_AUTH_DISABLE_ASSUME=1
 
   run aws_auth_login testprofile us-west-2
 
@@ -230,7 +230,7 @@ teardown() {
 }
 
 @test "aws_auth_login calls source assume with profile" {
-  export AWS_AUTH_DISABLE_ASSUME=0
+  export AWST_AUTH_DISABLE_ASSUME=0
   log_success() { echo "$*"; }
 
   # Create a fake assume script on PATH (source needs a file, not a function)
@@ -252,7 +252,7 @@ EOF
 }
 
 @test "aws_auth_login calls source assume with profile and region" {
-  export AWS_AUTH_DISABLE_ASSUME=0
+  export AWST_AUTH_DISABLE_ASSUME=0
   log_success() { echo "$*"; }
 
   local fake_bin="$(mktemp -d)"
@@ -272,7 +272,7 @@ EOF
 }
 
 @test "aws_auth_login fails when assume returns error" {
-  export AWS_AUTH_DISABLE_ASSUME=0
+  export AWST_AUTH_DISABLE_ASSUME=0
 
   local fake_bin="$(mktemp -d)"
   cat > "$fake_bin/assume" <<'EOF'

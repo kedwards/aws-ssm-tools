@@ -14,7 +14,7 @@ date() { command echo "2025-01-01T12:00:00+0000"; }
 
 ensure_aws_cli() { return 0; }
 parse_common_flags() { return 0; }
-aws_ssm_select_command() { eval "$1='uptime'"; return 0; }
+awst_select_ssm_command() { eval "$1='uptime'"; return 0; }
 choose_profile_and_region() { PROFILE="test"; REGION="us-east-1"; return 0; }
 aws_auth_assume() { return 0; }
 aws_expand_instances() { echo "i-abc123"; return 0; }
@@ -22,9 +22,9 @@ aws_get_all_running_instances() { INSTANCE_LIST=("web i-abc123"); }
 menu_select_many() { eval "$2='web i-abc123'"; return 0; }
 
 # Source the command
-source ./lib/commands/ssm_exec.sh
+source ./lib/commands/awst_exec.sh
 
-@test "ssm_exec polls for command completion" {
+@test "awst_exec polls for command completion" {
   local poll_file="/tmp/bats-poll-$$"
   echo "0" > "$poll_file"
   
@@ -54,7 +54,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   local final_count=$(cat "$poll_file" 2>/dev/null || echo "0")
   rm -f "$poll_file"
@@ -64,7 +64,7 @@ source ./lib/commands/ssm_exec.sh
   [[ $final_count -ge 3 ]]
 }
 
-@test "ssm_exec sleeps between poll attempts" {
+@test "awst_exec sleeps between poll attempts" {
   local aws_log="/tmp/bats-aws-poll-$$"
   aws() {
     echo "$(date +%s) $*" >> "$aws_log"
@@ -92,7 +92,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   local sleep_calls=$(grep -c "^sleep" "$aws_log" 2>/dev/null || echo "0")
   rm -f "$aws_log"
@@ -101,7 +101,7 @@ source ./lib/commands/ssm_exec.sh
   [[ $sleep_calls -ge 1 ]]
 }
 
-@test "ssm_exec displays status during polling" {
+@test "awst_exec displays status during polling" {
   local status_file="/tmp/bats-status-$$"
   echo "0" > "$status_file"
   
@@ -131,7 +131,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   rm -f "$status_file"
   
@@ -140,7 +140,7 @@ source ./lib/commands/ssm_exec.sh
   assert_output --partial "i-abc123"
 }
 
-@test "ssm_exec polls multiple instances" {
+@test "awst_exec polls multiple instances" {
   local aws_log="/tmp/bats-aws-multi-$$"
   aws() {
     echo "$*" >> "$aws_log"
@@ -167,7 +167,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   local aws_calls=$(cat "$aws_log" 2>/dev/null || echo "")
   rm -f "$aws_log"
@@ -177,7 +177,7 @@ source ./lib/commands/ssm_exec.sh
   [[ "$aws_calls" =~ "i-def456" ]]
 }
 
-@test "ssm_exec stops polling when all instances complete" {
+@test "awst_exec stops polling when all instances complete" {
   local poll_file="/tmp/bats-poll-$$"
   echo "0" > "$poll_file"
   
@@ -205,7 +205,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   local final_count=$(cat "$poll_file" 2>/dev/null || echo "0")
   rm -f "$poll_file"
@@ -216,7 +216,7 @@ source ./lib/commands/ssm_exec.sh
   [[ $final_count -ge 1 ]]
 }
 
-@test "ssm_exec handles pending status" {
+@test "awst_exec handles pending status" {
   local call_file="/tmp/bats-call-$$"
   echo "0" > "$call_file"
   
@@ -244,7 +244,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   rm -f "$call_file"
   
@@ -252,7 +252,7 @@ source ./lib/commands/ssm_exec.sh
   assert_output --partial "pending"
 }
 
-@test "ssm_exec handles delayed status" {
+@test "awst_exec handles delayed status" {
   local call_file="/tmp/bats-delayed-$$"
   echo "0" > "$call_file"
   
@@ -279,7 +279,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   rm -f "$call_file"
   
@@ -287,7 +287,7 @@ source ./lib/commands/ssm_exec.sh
   assert_output --partial "delayed"
 }
 
-@test "ssm_exec continues polling on failed status" {
+@test "awst_exec continues polling on failed status" {
   local call_file="/tmp/bats-failed-$$"
   echo "0" > "$call_file"
   
@@ -314,7 +314,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   rm -f "$call_file"
   

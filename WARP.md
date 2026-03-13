@@ -104,15 +104,14 @@ The codebase follows a layered architecture with clear separation of concerns:
 - `backends/fallback.sh` - Bash `select` fallback
 
 **Commands** (`lib/commands/`)
-- `ssm_login.sh` - Interactive AWS SSO login via Granted
-- `ssm_connect.sh` - Connect to instances (shell or port-forward modes)
-- `ssm_exec.sh` - Execute commands on multiple instances with polling and output display
-- `ssm_run.sh` - Run commands/scripts across AWS profiles (ported from aws-tools)
-- `ssm_creds.sh` - AWS credential store/use management
-- `ssm_list.sh` - List active SSM sessions
-- `ssm_kill.sh` - Terminate SSM sessions
+- `awst_connect.sh` - Connect to instances (shell or port-forward modes)
+- `awst_exec.sh` - Execute commands on multiple instances with polling and output display
+- `awst_run.sh` - Run commands/scripts across AWS profiles (ported from aws-tools)
+- `awst_creds.sh` - AWS credential store/use management
+- `awst_list.sh` - List active SSM sessions
+- `awst_kill.sh` - Terminate SSM sessions
 
-**Entry Point** (`bin/ssm`)
+**Entry Point** (`bin/awst`)
 - Main dispatcher that sources all libraries and routes subcommands
 
 ### Key Architectural Patterns
@@ -132,7 +131,7 @@ The tool supports both interactive and non-interactive usage. Commands respect:
 - `CI=true` - Detect CI environments
 
 **Instance Caching**
-EC2 instances are cached in `~/.cache/ssm/instances_${profile}_${region}.cache` with 30s TTL to reduce API calls during interactive selection.
+EC2 instances are cached in `~/.cache/aws-tools/instances_${profile}_${region}.cache` with 30s TTL to reduce API calls during interactive selection.
 
 **Error Code Convention**
 - `130` - User cancelled/ESC pressed (mirrors fzf convention)
@@ -149,7 +148,7 @@ All commands support `--dry-run` which:
 **Unit Tests** (`test/unit/`)
 - Use BATS (Bash Automated Testing System)
 - Stub all external dependencies (AWS CLI, fzf, logging)
-- Set `export AWS_EC2_DISABLE_LIVE_CALLS=1` and `AWS_AUTH_DISABLE_ASSUME=1`
+- Set `export AWST_EC2_DISABLE_LIVE_CALLS=1` and `AWST_AUTH_DISABLE_ASSUME=1`
 - Test flags, menu selection logic, command dispatch
 
 **Integration Tests** (`test/integration/`)
@@ -219,13 +218,13 @@ The tool uses **Granted** for AWS authentication.
 ### Saved Commands
 
 All commands are stored as individual files under a unified `commands/` directory with two subdirectories:
-- `commands/aws/` - Commands that run locally against AWS APIs (used by `ssm run`)
-- `commands/ssm/` - Commands sent to instances via SSM (used by `ssm exec`)
+- `commands/aws/` - Commands that run locally against AWS APIs (used by `awst run`)
+- `commands/ssm/` - Commands sent to instances via SSM (used by `awst exec`)
 
 **SSM commands** (`commands/ssm/`) are loaded from `lib/core/commands.sh` in the following order:
 1. `~/.local/share/aws-tools/commands/ssm/` - Default commands (installed from `examples/commands/ssm/`)
 2. `~/.config/aws-tools/commands/ssm/` - User custom commands (never overwritten)
-3. `$AWS_SSM_COMMAND_DIR` - Custom directory via environment variable
+3. `$AWST_SSM_CMD_DIR` - Custom directory via environment variable
 
 Later directories override earlier ones by filename. The installer deploys `examples/commands/ssm/` to the default location during install/update.
 
@@ -270,7 +269,7 @@ local_ports = 8428,9093
 
 Use `ports` and `local_ports` (comma-separated) to forward multiple ports with a single command. Each port opens in a background session.
 
-Config sections can be selected interactively via `ssm connect --config`.
+Config sections can be selected interactively via `awst connect --config`.
 
 ## Dependencies
 
@@ -288,46 +287,45 @@ Config sections can be selected interactively via `ssm connect --config`.
 ## Implementation Status
 
 **Completed Commands** (276 tests passing):
-- `ssm login` - AWS SSO authentication via Granted
-- `ssm connect` - Shell sessions and config-based port forwarding
-- `ssm exec` - Multi-instance command execution (54 tests)
+- `awst connect` - Shell sessions and config-based port forwarding
+- `awst exec` - Multi-instance command execution (54 tests)
   - Saved command support from `commands/ssm/` files
   - Interactive or CLI-driven instance selection
   - Semicolon-separated multi-instance targeting
   - Real-time polling with status updates
   - Stdout/stderr display from all instances
-- `ssm run` - Run commands/scripts across AWS profiles (integrated from aws-tools)
+- `awst run` - Run commands/scripts across AWS profiles (integrated from aws-tools)
   - Snippet files with `#ENV`/`#REGION` placeholder substitution
   - Executable scripts (run directly or iterated per-profile)
   - Inline queries via `-q`
   - Multi-source command resolution: installed defaults + user dir (merged, user overrides)
-  - Custom commands directory via `-d` or `AWS_TOOLS_CMD_DIR` (exclusive override)
+  - Custom commands directory via `-d` or `AWST_CMD_DIR` (exclusive override)
   - 11 bundled commands deployed to `~/.local/share/aws-tools/commands/aws/`
   - User scripts in `~/.config/aws-tools/commands/aws/` (never overwritten)
   - Profile iteration with `source assume` per entry
   - Filter by profile or profile:region pairs
-- `ssm creds` - AWS credential management
+- `awst creds` - AWS credential management
   - `store <env>` - Capture credentials via Granted into shell env vars
   - `use` - Re-apply stored AK/SK/ST as AWS_ env vars
-- `ssm list` - List active SSM sessions
-- `ssm kill` - Terminate active sessions
+- `awst list` - List active SSM sessions
+- `awst kill` - Terminate active sessions
 
 ### AWS Auth Layer (Unified)
 All commands use the same authentication flow — no pre-login required.
 
 The auth layer (`lib/core/aws_auth.sh`) provides:
 - `aws_auth_assume(profile, region)` - Checks for existing credentials; if none found and a profile is available, automatically calls `aws_auth_login` to authenticate. Used by `connect`, `exec`.
-- `aws_auth_login(profile, region)` - Actively authenticates by calling `source assume`. Used directly by `login` and `run` (per-profile iteration).
+- `aws_auth_login(profile, region)` - Actively authenticates by calling `source assume`. Used by `run` (per-profile iteration) and as auto-login fallback in `aws_auth_assume`.
 - `choose_profile_and_region()` - Resolves profile/region from flags, env vars, or interactive selection. Called before auth in all commands.
 
-### Profile-Iteration Commands (ssm run)
-The `ssm run` command resolves scripts from multiple directories in priority order:
+### Profile-Iteration Commands (awst run)
+The `awst run` command resolves scripts from multiple directories in priority order:
 1. `~/.local/share/aws-tools/commands/aws/` - Default scripts shipped with the tool (from `examples/commands/aws/`)
 2. `~/.config/aws-tools/commands/aws/` - User-defined scripts (never overwritten by install/update)
 
 A user script with the same name as a default script overrides it. Both directories are merged when listing commands — user scripts are marked with `+` in the output.
 
-Using `-d <path>` or setting `AWS_TOOLS_CMD_DIR` bypasses merging and uses only that single directory.
+Using `-d <path>` or setting `AWST_CMD_DIR` bypasses merging and uses only that single directory.
 
 **Snippet files** (non-executable) contain AWS CLI commands with optional placeholders:
 ```

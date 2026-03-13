@@ -38,24 +38,22 @@ source "$ROOT_DIR/lib/aws/ec2.sh"
 source "$ROOT_DIR/lib/aws/ssm.sh"
 
 # Commands
-source "$ROOT_DIR/lib/commands/ssm_login.sh"
-source "$ROOT_DIR/lib/commands/ssm_connect.sh"
-source "$ROOT_DIR/lib/commands/ssm_list.sh"
-source "$ROOT_DIR/lib/commands/ssm_kill.sh"
-source "$ROOT_DIR/lib/commands/ssm_exec.sh"
-source "$ROOT_DIR/lib/commands/ssm_run.sh"
-source "$ROOT_DIR/lib/commands/ssm_creds.sh"
-source "$ROOT_DIR/lib/commands/ssm_config.sh"
-source "$ROOT_DIR/lib/commands/ssm_update.sh"
+source "$ROOT_DIR/lib/commands/awst_connect.sh"
+source "$ROOT_DIR/lib/commands/awst_list.sh"
+source "$ROOT_DIR/lib/commands/awst_kill.sh"
+source "$ROOT_DIR/lib/commands/awst_exec.sh"
+source "$ROOT_DIR/lib/commands/awst_run.sh"
+source "$ROOT_DIR/lib/commands/awst_creds.sh"
+source "$ROOT_DIR/lib/commands/awst_config.sh"
+source "$ROOT_DIR/lib/commands/awst_update.sh"
 
 usage() {
   cat <<EOF
-Usage: ssm <command> [options]
+Usage: awst <command> [options]
 
 AWS CLI toolkit — SSM sessions, command execution, profile scripting, and more
 
 Commands:
-  login      Authenticate with AWS via Granted (assume)
   connect    Start SSM shell session or port forwarding to an instance
   exec       Run a shell command on one or more instances via SSM
   run        Run a command or script against one or more AWS profiles
@@ -69,7 +67,7 @@ Options:
   -h, --help     Show this help message
   -v, --version  Show version information
 
-Run 'ssm <command> --help' for more information on a specific command.
+Run 'awst <command> --help' for more information on a specific command.
 EOF
 }
 
@@ -91,32 +89,29 @@ main() {
   shift || true
 
   case "$cmd" in
-    login)
-      ssm_login "$@"
-      ;;
     connect)
-      ssm_connect "$@"
+      awst_connect "$@"
       ;;
     exec)
-      ssm_exec "$@"
+      awst_exec "$@"
       ;;
     run)
-      ssm_run "$@"
+      awst_run "$@"
       ;;
     creds)
-      ssm_creds "$@"
+      awst_creds "$@"
       ;;
     list)
-      ssm_list "$@"
+      awst_list "$@"
       ;;
     kill)
-      ssm_kill "$@"
+      awst_kill "$@"
       ;;
     config)
-      ssm_config "$@"
+      awst_config "$@"
       ;;
     update)
-      ssm_update "$@"
+      awst_update "$@"
       ;;
     *)
       echo "Unknown command: $cmd" >&2

@@ -80,9 +80,9 @@ guard_function_override aws_get_all_running_instances || aws_get_all_running_ins
     return 1
   }
 
-  local cache_dir="$HOME/.cache/ssm"
+  local cache_dir="$HOME/.cache/aws-tools"
   local cache_file="$cache_dir/instances_${profile}_${region}.cache"
-  local ttl="${SSM_CACHE_TTL:-30}"
+  local ttl="${AWST_CACHE_TTL:-30}"
 
   mkdir -p "$cache_dir"
 

@@ -12,7 +12,7 @@ log_success() { :; }
 
 ensure_aws_cli() { return 0; }
 parse_common_flags() { return 0; }
-aws_ssm_select_command() { return 0; }
+awst_select_ssm_command() { return 0; }
 choose_profile_and_region() { return 0; }
 aws_auth_assume() { return 0; }
 aws_expand_instances() { return 0; }
@@ -43,38 +43,38 @@ teardown() {
 }
 
 # Source the command
-source ./lib/commands/ssm_exec.sh
+source ./lib/commands/awst_exec.sh
 
-@test "ssm_exec_usage displays help text" {
-  run ssm_exec_usage
+@test "awst_exec_usage displays help text" {
+  run awst_exec_usage
   
   assert_success
-  assert_output --partial "Usage: ssm exec [OPTIONS]"
+  assert_output --partial "Usage: awst exec [OPTIONS]"
   assert_output --partial "Run a shell command via AWS SSM"
   assert_output --partial "-c <command>"
   assert_output --partial "-i <instances>"
   assert_output --partial "Examples:"
 }
 
-@test "ssm_exec shows help with -h flag" {
+@test "awst_exec shows help with -h flag" {
   SHOW_HELP=true
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
-  assert_output --partial "Usage: ssm exec"
+  assert_output --partial "Usage: awst exec"
 }
 
-@test "ssm_exec shows help with --help flag" {
+@test "awst_exec shows help with --help flag" {
   SHOW_HELP=true
   
-  run ssm_exec --help
+  run awst_exec --help
   
   assert_success
-  assert_output --partial "Usage: ssm exec"
+  assert_output --partial "Usage: awst exec"
 }
 
-@test "ssm_exec calls ensure_aws_cli" {
+@test "awst_exec calls ensure_aws_cli" {
   ensure_aws_cli() {
     echo "ensure_aws_cli_called"
     return 0
@@ -84,20 +84,20 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_output --partial "ensure_aws_cli_called"
 }
 
-@test "ssm_exec fails if ensure_aws_cli fails" {
+@test "awst_exec fails if ensure_aws_cli fails" {
   ensure_aws_cli() { return 1; }
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec calls parse_common_flags with all arguments" {
+@test "awst_exec calls parse_common_flags with all arguments" {
   parse_common_flags() {
     echo "parse_common_flags: $*"
     return 0
@@ -107,21 +107,21 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec -c "uptime" -i "i-12345"
+  run awst_exec -c "uptime" -i "i-12345"
   
   assert_output --partial "parse_common_flags: -c uptime -i i-12345"
 }
 
-@test "ssm_exec fails if parse_common_flags fails" {
+@test "awst_exec fails if parse_common_flags fails" {
   parse_common_flags() { return 1; }
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec prompts for command if COMMAND_ARG is empty" {
-  aws_ssm_select_command() {
+@test "awst_exec prompts for command if COMMAND_ARG is empty" {
+  awst_select_ssm_command() {
     eval "$1='uptime'"
     echo "select_command_called"
     return 0
@@ -131,24 +131,24 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_output --partial "select_command_called"
 }
 
-@test "ssm_exec fails if command selection fails" {
-  aws_ssm_select_command() { return 1; }
+@test "awst_exec fails if command selection fails" {
+  awst_select_ssm_command() { return 1; }
   COMMAND_ARG=""
   INSTANCES_ARG="i-12345"
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec calls aws_auth_assume" {
+@test "awst_exec calls aws_auth_assume" {
   aws_auth_assume() {
     echo "auth_assume: $1 $2"
     return 0
@@ -158,25 +158,25 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_output --partial "auth_assume:"
 }
 
-@test "ssm_exec fails if aws_auth_assume fails" {
+@test "awst_exec fails if aws_auth_assume fails" {
   aws_auth_assume() { return 1; }
   COMMAND_ARG="uptime"
   INSTANCES_ARG="i-12345"
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec validates command is not empty after selection" {
-  aws_ssm_select_command() {
+@test "awst_exec validates command is not empty after selection" {
+  awst_select_ssm_command() {
     eval "$1=''"
     return 0
   }
@@ -185,13 +185,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec uses COMMAND_ARG if provided" {
-  aws_ssm_select_command() {
+@test "awst_exec uses COMMAND_ARG if provided" {
+  awst_select_ssm_command() {
     echo "should_not_be_called"
     return 1
   }
@@ -200,7 +200,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   refute_output --partial "should_not_be_called"
 }
@@ -208,7 +208,7 @@ source ./lib/commands/ssm_exec.sh
 
 # Instance expansion and selection tests
 
-@test "ssm_exec expands single instance from INSTANCES_ARG" {
+@test "awst_exec expands single instance from INSTANCES_ARG" {
   aws_expand_instances() {
     echo "i-abc123"
     return 0
@@ -218,12 +218,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
 }
 
-@test "ssm_exec expands multiple comma-separated instances" {
+@test "awst_exec expands multiple comma-separated instances" {
   aws_expand_instances() {
     case "$1" in
       "Report") echo "i-abc123" ;;
@@ -236,12 +236,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
 }
 
-@test "ssm_exec trims whitespace from instance names" {
+@test "awst_exec trims whitespace from instance names" {
   aws_expand_instances() {
     case "$1" in
       "Report") echo "i-report" ;;
@@ -254,13 +254,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   # Should succeed with both trimmed instances
   assert_success
 }
 
-@test "ssm_exec warns when no running instance found for name" {
+@test "awst_exec warns when no running instance found for name" {
   aws_expand_instances() {
     return 0  # No output means no instances
   }
@@ -272,13 +272,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_output --partial "log_warn: No running instance found matching: NonExistent"
   assert_failure
 }
 
-@test "ssm_exec prompts for instances if INSTANCES_ARG is empty" {
+@test "awst_exec prompts for instances if INSTANCES_ARG is empty" {
   aws_get_all_running_instances() {
     INSTANCE_LIST=("web-server i-abc123" "db-server i-def456")
   }
@@ -292,12 +292,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_output --partial "menu_select_many_called"
 }
 
-@test "ssm_exec fails if no running instances found for interactive" {
+@test "awst_exec fails if no running instances found for interactive" {
   aws_get_all_running_instances() {
     INSTANCE_LIST=()
   }
@@ -306,12 +306,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec fails if user cancels instance selection" {
+@test "awst_exec fails if user cancels instance selection" {
   aws_get_all_running_instances() {
     INSTANCE_LIST=("web-server i-abc123")
   }
@@ -323,13 +323,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
   [[ $status -eq 130 ]]
 }
 
-@test "ssm_exec fails if no instances selected" {
+@test "awst_exec fails if no instances selected" {
   aws_get_all_running_instances() {
     INSTANCE_LIST=("web-server i-abc123")
   }
@@ -342,12 +342,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec extracts instance IDs from menu selections" {
+@test "awst_exec extracts instance IDs from menu selections" {
   aws_get_all_running_instances() {
     INSTANCE_LIST=("web-server i-abc123" "db-server i-def456")
   }
@@ -361,12 +361,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
 }
 
-@test "ssm_exec fails if no valid instances found after expansion" {
+@test "awst_exec fails if no valid instances found after expansion" {
   aws_expand_instances() {
     return 0  # No output
   }
@@ -375,12 +375,12 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_failure
 }
 
-@test "ssm_exec correctly parses and expands comma-separated instance names" {
+@test "awst_exec correctly parses and expands comma-separated instance names" {
   # Create temp file to track expansion calls
   EXPAND_LOG="$(mktemp)"
   
@@ -399,7 +399,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test-profile"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   

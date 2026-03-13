@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 
-ssm_config_usage() {
+awst_config_usage() {
   cat <<EOF
-Usage: ssm config
+Usage: awst config
 
 Display current aws-tools configuration including file paths,
 directories, and environment variables.
 EOF
 }
 
-ssm_config() {
+awst_config() {
   if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    ssm_config_usage
+    awst_config_usage
     return 0
   fi
 
   local install_dir="$HOME/.local/share/aws-tools"
   local config_dir="$HOME/.config/aws-tools"
-  local cache_dir="$HOME/.cache/ssm"
+  local cache_dir="$HOME/.cache/aws-tools"
   local bin_dir="$HOME/.local/bin"
 
   echo "aws-tools v${VERSION:-unknown}"
@@ -41,13 +41,13 @@ ssm_config() {
   echo "SSM Commands (ssm exec)"
   _config_path "  Installed" "$install_dir/commands/ssm"
   _config_path "  User" "$config_dir/commands/ssm"
-  _config_var  "  Custom dir" "AWS_SSM_COMMAND_DIR"
+  _config_var  "  Custom dir" "AWST_SSM_CMD_DIR"
   echo ""
 
   echo "AWS Commands (ssm run)"
   _config_path "  Installed" "$install_dir/commands/aws"
   _config_path "  User" "$config_dir/commands/aws"
-  _config_var  "  Custom dir" "AWS_TOOLS_CMD_DIR"
+  _config_var  "  Custom dir" "AWST_CMD_DIR"
   echo ""
 
   # ── AWS ──
@@ -73,7 +73,7 @@ ssm_config() {
   _config_var "    MENU_NON_INTERACTIVE" "MENU_NON_INTERACTIVE" "0"
   _config_var "    MENU_ASSUME_FIRST" "MENU_ASSUME_FIRST" "0"
   echo "  Cache:"
-  _config_var "    SSM_CACHE_TTL" "SSM_CACHE_TTL" "30"
+  _config_var "    AWST_CACHE_TTL" "AWST_CACHE_TTL" "30"
 
   # ── Dependencies ──
   echo ""

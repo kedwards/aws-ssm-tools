@@ -14,7 +14,7 @@ date() { command echo "2025-01-01T12:00:00+0000"; }
 
 ensure_aws_cli() { return 0; }
 parse_common_flags() { return 0; }
-aws_ssm_select_command() { eval "$1='uptime'"; return 0; }
+awst_select_ssm_command() { eval "$1='uptime'"; return 0; }
 choose_profile_and_region() { PROFILE="test"; REGION="us-east-1"; return 0; }
 aws_auth_assume() { return 0; }
 aws_expand_instances() { echo "i-abc123"; return 0; }
@@ -22,9 +22,9 @@ aws_get_all_running_instances() { INSTANCE_LIST=("web i-abc123"); }
 menu_select_many() { eval "$2='web i-abc123'"; return 0; }
 
 # Source the command
-source ./lib/commands/ssm_exec.sh
+source ./lib/commands/awst_exec.sh
 
-@test "ssm_exec displays stdout from instance" {
+@test "awst_exec displays stdout from instance" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -46,13 +46,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "Hello from instance"
 }
 
-@test "ssm_exec displays stderr from instance" {
+@test "awst_exec displays stderr from instance" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -74,13 +74,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "Error output"
 }
 
-@test "ssm_exec shows instance ID in results header" {
+@test "awst_exec shows instance ID in results header" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -100,13 +100,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "ID: i-abc123"
 }
 
-@test "ssm_exec shows status in results header" {
+@test "awst_exec shows status in results header" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -126,13 +126,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "Status: Success"
 }
 
-@test "ssm_exec labels stdout output" {
+@test "awst_exec labels stdout output" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -154,13 +154,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "STDOUT"
 }
 
-@test "ssm_exec labels stderr output" {
+@test "awst_exec labels stderr output" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -182,13 +182,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "STDERR"
 }
 
-@test "ssm_exec shows message when no output" {
+@test "awst_exec shows message when no output" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -209,13 +209,13 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "No output returned"
 }
 
-@test "ssm_exec displays output from multiple instances" {
+@test "awst_exec displays output from multiple instances" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -248,14 +248,14 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   assert_output --partial "Output from instance 1"
   assert_output --partial "Output from instance 2"
 }
 
-@test "ssm_exec uses dividers between results" {
+@test "awst_exec uses dividers between results" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -277,7 +277,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   assert_success
   # Should have box drawing characters for dividers
@@ -285,7 +285,7 @@ source ./lib/commands/ssm_exec.sh
   assert_output --partial "└─"
 }
 
-@test "ssm_exec handles get-command-invocation failure gracefully" {
+@test "awst_exec handles get-command-invocation failure gracefully" {
   aws() {
     if [[ "$1" == "ssm" && "$2" == "send-command" ]]; then
       echo "cmd-12345"
@@ -308,7 +308,7 @@ source ./lib/commands/ssm_exec.sh
   PROFILE="test"
   REGION="us-east-1"
   
-  run ssm_exec
+  run awst_exec
   
   # Should still succeed overall
   assert_success

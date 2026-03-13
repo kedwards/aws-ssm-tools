@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 load '../helpers/bats-support/load'
 load '../helpers/bats-assert/load'
@@ -21,7 +21,7 @@ setup() {
   export INSTALL_DIR="${HOME}/.local/share/aws-tools"
   
   # Source the update command
-  source ./lib/commands/ssm_update.sh
+  source ./lib/commands/awst_update.sh
 }
 
 teardown() {
@@ -29,25 +29,25 @@ teardown() {
   rm -rf "$FAKE_HOME"
 }
 
-@test "ssm_update shows help with --help" {
-  run ssm_update --help
+@test "awst_update shows help with --help" {
+  run awst_update --help
   assert_success
-  assert_output --partial "Usage: ssm update"
+  assert_output --partial "Usage: awst update"
 }
 
-@test "ssm_update shows help with -h" {
-  run ssm_update -h
+@test "awst_update shows help with -h" {
+  run awst_update -h
   assert_success
-  assert_output --partial "Usage: ssm update"
+  assert_output --partial "Usage: awst update"
 }
 
-@test "ssm_update fails when not installed" {
-  run ssm_update
+@test "awst_update fails when not installed" {
+  run awst_update
   assert_failure
   assert_output --partial "not installed"
 }
 
-@test "ssm_update shows current version when installed" {
+@test "awst_update shows current version when installed" {
   # Create fake installation
   mkdir -p "$INSTALL_DIR"
   echo "1.3.1" > "$INSTALL_DIR/VERSION"
@@ -55,26 +55,26 @@ teardown() {
   # Stub curl to fail so it doesn't proceed
   curl() { return 1; }
   
-  run ssm_update
+  run awst_update
   
   assert_failure
   assert_output --partial "Current version: 1.3.1"
 }
 
-@test "ssm_update usage mentions specific version example" {
-  run ssm_update --help
+@test "awst_update usage mentions specific version example" {
+  run awst_update --help
   assert_success
   assert_output --partial "vX.Y.Z"
 }
 
-@test "ssm_update usage mentions main branch option" {
-  run ssm_update --help
+@test "awst_update usage mentions main branch option" {
+  run awst_update --help
   assert_success
   assert_output --partial "main"
 }
 
-@test "ssm_update usage mentions dev branch option" {
-  run ssm_update --help
+@test "awst_update usage mentions dev branch option" {
+  run awst_update --help
   assert_success
   assert_output --partial "dev"
 }

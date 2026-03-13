@@ -4,8 +4,8 @@
 # Commands are returned as raw text — no local expansion.
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 setup() {
   log_debug() { :; }
@@ -53,7 +53,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" == *'${MYVAR:-default_value}'* ]]
 }
 
@@ -68,21 +68,21 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" =~ \$USER ]]
 }
 
 @test "preserves tab escape sequences" {
   _setup_select "with-tabs" "With tabs" 'echo -e "col1\tcol2\tcol3"'
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" =~ "echo -e" ]]
 }
 
 @test "preserves subshell syntax" {
   _setup_select "subshell" "Run in subshell" "(cd /tmp && ls)"
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [ "$result" = "(cd /tmp && ls)" ]
 }
 
@@ -97,7 +97,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" =~ "grep pattern" ]]
 }
 
@@ -112,7 +112,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" =~ 'FILES[0]' ]]
 }
 
@@ -127,7 +127,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" == *'${#USER}'* ]]
 }
 
@@ -142,7 +142,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" == *'${USER/test/prod}'* ]]
 }
 
@@ -157,7 +157,7 @@ _setup_select() {
   source ./lib/core/commands.sh
 
   local result
-  aws_ssm_select_command result
+  awst_select_ssm_command result
   [[ "$result" =~ "echo line1" ]]
   [[ "$result" =~ "echo line2" ]]
 }

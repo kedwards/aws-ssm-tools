@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 load '../helpers/bats-support/load'
 load '../helpers/bats-assert/load'

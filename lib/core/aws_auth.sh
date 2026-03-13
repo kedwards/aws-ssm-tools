@@ -33,8 +33,8 @@ guard_function_override aws_auth_login || aws_auth_login() {
   fi
 
   # Disable assume check for tests
-  if [[ "${AWS_AUTH_DISABLE_ASSUME:-0}" == "1" ]]; then
-    log_debug "Skipping assume (AWS_AUTH_DISABLE_ASSUME=1)"
+  if [[ "${AWST_AUTH_DISABLE_ASSUME:-0}" == "1" ]]; then
+    log_debug "Skipping assume (AWST_AUTH_DISABLE_ASSUME=1)"
     return 0
   fi
 
@@ -70,7 +70,7 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
     fi
 
     log_error "No AWS credentials found"
-    log_error "Authenticate first with: ssm login, or assume <profile> -r <region>"
+    log_error "Authenticate first with: assume <profile> -r <region>"
     return 1
   fi
 
@@ -80,7 +80,7 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
     if [[ -n "$current_profile" && "$current_profile" != "$profile" ]]; then
       log_error "Currently authenticated with profile '$current_profile'"
       log_error "Requested profile '$profile'"
-      log_error "Run 'ssm login -p $profile' to switch profiles"
+    log_error "Run 'assume $profile' to switch profiles"
       return 1
     fi
   fi
@@ -90,7 +90,7 @@ guard_function_override aws_auth_assume || aws_auth_assume() {
     if [[ -n "$current_region" && "$current_region" != "$region" ]]; then
       log_error "Currently authenticated with region '$current_region'"
       log_error "Requested region '$region'"
-      log_error "Run 'ssm login -p <profile> -r $region' to switch regions"
+    log_error "Run 'assume <profile> -r $region' to switch regions"
       return 1
     fi
   fi

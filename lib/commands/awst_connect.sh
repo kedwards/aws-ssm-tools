@@ -7,9 +7,9 @@ source "$ROOT_DIR/lib/core/interaction.sh"
 source "$ROOT_DIR/lib/menu/index.sh"
 
 
-ssm_connect_usage() {
+awst_connect_usage() {
   cat <<EOF
-Usage: ssm connect [OPTIONS] [INSTANCE]
+Usage: awst connect [OPTIONS] [INSTANCE]
 
 Options:
   --config               Config-based port forwarding
@@ -18,22 +18,22 @@ Options:
 EOF
 }
 
-ssm_connect() {
+awst_connect() {
   parse_common_flags "$@" || return 1
 
   if [[ "$SHOW_HELP" == true ]]; then
-    ssm_connect_usage
+    awst_connect_usage
     return 0
   fi
 
   if [[ "$CONFIG_MODE" == true ]]; then
-    ssm_connect_config_mode
+    awst_connect_config_mode
   else
-    ssm_connect_shell_mode
+    awst_connect_shell_mode
   fi
 }
 
-ssm_connect_shell_mode() {
+awst_connect_shell_mode() {
   local target="${INSTANCES_ARG:-}"
   [[ -z "$target" && ${#POSITIONAL[@]} -gt 0 ]] && target="${POSITIONAL[0]}"
 
@@ -59,10 +59,10 @@ ssm_connect_shell_mode() {
   instance_name="${instance% *}"
   instance_id="${instance##* }"
   
-  aws_ssm_start_shell "$instance_id"
+  awst_ssm_start_shell "$instance_id"
 }
 
-ssm_connect_config_mode() {
+awst_connect_config_mode() {
   if non_interactive_mode && [[ "${MENU_ASSUME_FIRST:-0}" != "1" ]]; then
     log_error "Config selection requires interaction"
     return 1
@@ -127,16 +127,16 @@ ssm_connect_config_mode() {
   local cfg="${connection_map[$conn]}"
 
   local profile region port ports local_port local_ports host url name
-  profile=$(aws_ssm_config_get "$cfg" "$conn" profile)
-  region=$(aws_ssm_config_get "$cfg" "$conn" region)
-  port=$(aws_ssm_config_get "$cfg" "$conn" port)
-  ports=$(aws_ssm_config_get "$cfg" "$conn" ports)
+  profile=$(awst_config_get "$cfg" "$conn" profile)
+  region=$(awst_config_get "$cfg" "$conn" region)
+  port=$(awst_config_get "$cfg" "$conn" port)
+  ports=$(awst_config_get "$cfg" "$conn" ports)
 
-  local_port=$(aws_ssm_config_get "$cfg" "$conn" local_port)
-  local_ports=$(aws_ssm_config_get "$cfg" "$conn" local_ports)
-  host=$(aws_ssm_config_get "$cfg" "$conn" host)
-  url=$(aws_ssm_config_get "$cfg" "$conn" url)
-  name=$(aws_ssm_config_get "$cfg" "$conn" name)
+  local_port=$(awst_config_get "$cfg" "$conn" local_port)
+  local_ports=$(awst_config_get "$cfg" "$conn" local_ports)
+  host=$(awst_config_get "$cfg" "$conn" host)
+  url=$(awst_config_get "$cfg" "$conn" url)
+  name=$(awst_config_get "$cfg" "$conn" name)
 
   # Support both single port and multiple ports
   if [[ -n "$ports" ]]; then
@@ -175,7 +175,7 @@ ssm_connect_config_mode() {
     local p="${port_array[$i]}"
     local lp="${local_port_array[$i]:-$p}"
     log_info "Starting port forward: localhost:$lp -> $host:$p"
-    aws_ssm_start_port_forward "$instance_id" "$host" "$p" "$lp" &
+    awst_ssm_start_port_forward "$instance_id" "$host" "$p" "$lp" &
   done
 
   [[ -n "$url" ]] && sleep 2 && open_browser "$url" || true

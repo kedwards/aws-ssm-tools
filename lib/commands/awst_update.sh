@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-ssm_update_usage() {
+awst_update_usage() {
   cat <<EOF
-Usage: ssm update [VERSION]
+Usage: awst update [VERSION]
 
 Update aws-tools to a specific version or the latest release.
 
@@ -13,18 +13,18 @@ Arguments:
              - "vX.Y.Z" for a specific version tag
 
 Examples:
-  ssm update           # Update to latest release
-  ssm update main      # Update to development branch
-  ssm update v0.1.0    # Update to specific version
+  awst update           # Update to latest release
+  awst update main      # Update to development branch
+  awst update v0.1.0    # Update to specific version
 
 Options:
   -h, --help    Show this help message
 EOF
 }
 
-ssm_update() {
+awst_update() {
   if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    ssm_update_usage
+    awst_update_usage
     return 0
   fi
 
@@ -142,6 +142,6 @@ ssm_update() {
   fi
   echo ""
   echo "To update to a specific version, run:"
-  echo "  ssm update v0.1.0"
+  echo "  awst update v0.1.0"
   echo ""
 }

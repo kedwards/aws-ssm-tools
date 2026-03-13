@@ -2,8 +2,8 @@
 # shellcheck disable=SC2034
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 setup() {
   # Stub logging
@@ -59,27 +59,27 @@ teardown() {
   rm -f "$PS_OUTPUT_FILE" "$KILL_LOG"
 }
 
-# ssm_kill tests
+# awst_kill tests
 
-@test "ssm_kill shows help with --help" {
-  source ./lib/commands/ssm_kill.sh
+@test "awst_kill shows help with --help" {
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill --help
+  run awst_kill --help
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "Usage: ssm kill" ]]
+  [[ "$output" =~ "Usage: awst kill" ]]
 }
 
-@test "ssm_kill shows no sessions when none found" {
+@test "awst_kill shows no sessions when none found" {
   echo "" > "$PS_OUTPUT_FILE"
   
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "No active SSM sessions found" ]]
 }
 
-@test "ssm_kill extracts PID from selection" {
+@test "awst_kill extracts PID from selection" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-abc123
 EOF
@@ -94,9 +94,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Killing SSM session (PIDs: 22345, 12345)" ]]
   killed=$(cat "$KILL_LOG")
@@ -104,7 +104,7 @@ EOF
   [[ "$killed" =~ "12345" ]]
 }
 
-@test "ssm_kill sends SIGTERM first" {
+@test "awst_kill sends SIGTERM first" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     99999  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-test
 EOF
@@ -118,16 +118,16 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   killed=$(cat "$KILL_LOG")
   [[ "$killed" =~ "SIGTERM:109999" ]]
   [[ "$killed" =~ "SIGTERM:99999" ]]
 }
 
-@test "ssm_kill handles cancelled selection" {
+@test "awst_kill handles cancelled selection" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-abc123
 EOF
@@ -141,14 +141,14 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 1 ]
   [ ! -s "$KILL_LOG" ]  # File should be empty
 }
 
-@test "ssm_kill handles empty selection" {
+@test "awst_kill handles empty selection" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     12345  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-abc123
 EOF
@@ -162,15 +162,15 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "No sessions selected" ]]
   [ ! -s "$KILL_LOG" ]  # File should be empty
 }
 
-@test "ssm_kill handles multiple sessions" {
+@test "awst_kill handles multiple sessions" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     11111  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-aaa
 user     22222  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-bbb
@@ -185,9 +185,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "(PIDs: 21111, 11111)" ]]
   [[ "$output" =~ "(PIDs: 32222, 22222)" ]]
@@ -195,7 +195,7 @@ EOF
   [ "$kill_count" -eq 4 ]  # 2 parents + 2 children
 }
 
-@test "ssm_kill correctly identifies both parent and child PIDs" {
+@test "awst_kill correctly identifies both parent and child PIDs" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     54321  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-xyz789
 EOF
@@ -227,9 +227,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Killing SSM session (PIDs: 64321, 54321)" ]]
   # Verify both PIDs appear in kill log
@@ -238,7 +238,7 @@ EOF
   [[ "$killed" =~ "54321" ]]  # child PID
 }
 
-@test "ssm_kill attempts to kill both parent and child processes" {
+@test "awst_kill attempts to kill both parent and child processes" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     77777  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-test123
 EOF
@@ -252,9 +252,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   
   # Verify both parent and child PIDs were killed
@@ -267,7 +267,7 @@ EOF
   [ "$sigterm_count" -eq 2 ]
 }
 
-@test "ssm_kill successfully terminates session by killing both processes" {
+@test "awst_kill successfully terminates session by killing both processes" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     33333  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-complete
 EOF
@@ -285,9 +285,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Session terminated (PIDs: 43333, 33333)" ]]
   
@@ -297,7 +297,7 @@ EOF
   [[ ! "$killed" =~ "SIGKILL" ]]
 }
 
-@test "ssm_kill attempts force kill if processes still running after initial termination" {
+@test "awst_kill attempts force kill if processes still running after initial termination" {
   cat > "$PS_OUTPUT_FILE" <<'EOF'
 user     55555  0.0  0.0  12345  1234 pts/0    S+   10:00   0:00 session-manager-plugin {} us-east-1 StartSession --target i-stubborn
 EOF
@@ -336,9 +336,9 @@ EOF
   aws() { return 1; }
   export -f aws
 
-  source ./lib/commands/ssm_kill.sh
+  source ./lib/commands/awst_kill.sh
   
-  run ssm_kill
+  run awst_kill
   [ "$status" -eq 0 ]
   [[ "$output" =~ "still running, forcing kill" ]]
   

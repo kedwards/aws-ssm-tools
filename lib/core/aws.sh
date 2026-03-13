@@ -29,7 +29,7 @@ aws_list_profiles() {
   done
 }
 
-aws_ssm_config_get() {
+awst_config_get() {
   local file="$1"
   local section="$2"
   local key="$3"

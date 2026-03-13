@@ -2,8 +2,8 @@
 # shellcheck disable=SC2034
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 setup() {
   # Stub logging
@@ -16,11 +16,11 @@ setup() {
   # Stub dependencies that aws.sh sources
   aws_get_all_running_instances() { :; }
   aws_expand_instances() { :; }
-  aws_ssm_start_shell() { :; }
-  aws_ssm_start_port_forward() { :; }
+  awst_ssm_start_shell() { :; }
+  awst_ssm_start_port_forward() { :; }
   menu_select_one() { :; }
   export -f aws_get_all_running_instances aws_expand_instances
-  export -f aws_ssm_start_shell aws_ssm_start_port_forward menu_select_one
+  export -f awst_ssm_start_shell awst_ssm_start_port_forward menu_select_one
 
   # Set ROOT_DIR for sourcing
   ROOT_DIR="$(pwd)"
@@ -119,16 +119,16 @@ EOF
   [ "${profiles[1]}" = "prod" ]
 }
 
-# aws_ssm_config_get tests
+# awst_config_get tests
 
-@test "aws_ssm_config_get returns empty for missing file" {
+@test "awst_config_get returns empty for missing file" {
   source ./lib/core/aws.sh
   
-  result=$(aws_ssm_config_get "/nonexistent" "section" "key")
+  result=$(awst_config_get "/nonexistent" "section" "key")
   [ -z "$result" ]
 }
 
-@test "aws_ssm_config_get extracts value from INI section" {
+@test "awst_config_get extracts value from INI section" {
   cat > "$HOME/test.ini" <<EOF
 [db-conn]
 port = 5432
@@ -137,11 +137,11 @@ EOF
 
   source ./lib/core/aws.sh
   
-  result=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "port")
+  result=$(awst_config_get "$HOME/test.ini" "db-conn" "port")
   [ "$result" = "5432" ]
 }
 
-@test "aws_ssm_config_get handles spaces around equals" {
+@test "awst_config_get handles spaces around equals" {
   cat > "$HOME/test.ini" <<EOF
 [db-conn]
 port = 5432
@@ -151,16 +151,16 @@ EOF
 
   source ./lib/core/aws.sh
   
-  port=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "port")
-  host=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "host")
-  region=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "region")
+  port=$(awst_config_get "$HOME/test.ini" "db-conn" "port")
+  host=$(awst_config_get "$HOME/test.ini" "db-conn" "host")
+  region=$(awst_config_get "$HOME/test.ini" "db-conn" "region")
   
   [ "$port" = "5432" ]
   [ "$host" = "localhost" ]
   [ "$region" = "us-east-1" ]
 }
 
-@test "aws_ssm_config_get stops at next section" {
+@test "awst_config_get stops at next section" {
   cat > "$HOME/test.ini" <<EOF
 [section1]
 key1 = value1
@@ -172,14 +172,14 @@ EOF
 
   source ./lib/core/aws.sh
   
-  result1=$(aws_ssm_config_get "$HOME/test.ini" "section1" "key1")
-  result2=$(aws_ssm_config_get "$HOME/test.ini" "section2" "key1")
+  result1=$(awst_config_get "$HOME/test.ini" "section1" "key1")
+  result2=$(awst_config_get "$HOME/test.ini" "section2" "key1")
   
   [ "$result1" = "value1" ]
   [ "$result2" = "value2" ]
 }
 
-@test "aws_ssm_config_get returns empty for missing key" {
+@test "awst_config_get returns empty for missing key" {
   cat > "$HOME/test.ini" <<EOF
 [db-conn]
 port = 5432
@@ -187,11 +187,11 @@ EOF
 
   source ./lib/core/aws.sh
   
-  result=$(aws_ssm_config_get "$HOME/test.ini" "db-conn" "missing")
+  result=$(awst_config_get "$HOME/test.ini" "db-conn" "missing")
   [ -z "$result" ]
 }
 
-@test "aws_ssm_config_get returns empty for missing section" {
+@test "awst_config_get returns empty for missing section" {
   cat > "$HOME/test.ini" <<EOF
 [db-conn]
 port = 5432
@@ -199,7 +199,7 @@ EOF
 
   source ./lib/core/aws.sh
   
-  result=$(aws_ssm_config_get "$HOME/test.ini" "missing-section" "port")
+  result=$(awst_config_get "$HOME/test.ini" "missing-section" "port")
   [ -z "$result" ]
 }
 

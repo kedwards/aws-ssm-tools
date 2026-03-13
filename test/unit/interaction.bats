@@ -2,8 +2,8 @@
 # shellcheck disable=SC2329
 
 export MENU_NON_INTERACTIVE=1
-export AWS_EC2_DISABLE_LIVE_CALLS=1
-export AWS_AUTH_DISABLE_ASSUME=1
+export AWST_EC2_DISABLE_LIVE_CALLS=1
+export AWST_AUTH_DISABLE_ASSUME=1
 
 source ./lib/menu/index.sh
 source ./lib/core/aws_auth.sh
@@ -33,6 +33,6 @@ setup() {
 
   assert_failure
   assert_output --partial "No AWS credentials found"
-  assert_output --partial "Authenticate first with: ssm login"
+  assert_output --partial "Authenticate first with: assume"
 }
 

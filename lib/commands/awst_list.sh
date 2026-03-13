@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-ssm_list_usage() {
+awst_list_usage() {
   cat <<EOF
-Usage: ssm list
+Usage: awst list
 
 List active SSM sessions on this host.
 EOF
 }
 
-ssm_list() {
+awst_list() {
   if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    ssm_list_usage
+    awst_list_usage
     return 0
   fi
 

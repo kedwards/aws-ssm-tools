@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-ssm_kill_usage() {
+awst_kill_usage() {
   cat <<EOF
-Usage: ssm kill
+Usage: awst kill
 
 Interactively select and terminate SSM sessions on this host.
 EOF
 }
 
-ssm_kill() {
+awst_kill() {
   if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    ssm_kill_usage
+    awst_kill_usage
     return 0
   fi
 
