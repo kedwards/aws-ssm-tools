@@ -8,15 +8,16 @@ ROOT_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 # Version info
 VERSION="$(cat "$ROOT_DIR/VERSION" 2>/dev/null || echo 'dev')"
 
-# Auto-deploy commands if missing (handles upgrade from older versions)
-if [[ -d "$ROOT_DIR/examples/commands" && ! -d "$ROOT_DIR/commands/aws" ]]; then
-  mkdir -p "$ROOT_DIR/commands/aws" "$ROOT_DIR/commands/ssm"
+# Auto-deploy commands to ~/.config if missing (handles upgrade from older versions)
+_AWST_CONFIG_DIR="${HOME}/.config/aws-tools"
+if [[ -d "$ROOT_DIR/examples/commands" && ! -d "$_AWST_CONFIG_DIR/commands/aws" ]]; then
+  mkdir -p "$_AWST_CONFIG_DIR/commands/aws" "$_AWST_CONFIG_DIR/commands/ssm"
   command -v rsync >/dev/null 2>&1 && {
-    rsync -a "$ROOT_DIR/examples/commands/aws/" "$ROOT_DIR/commands/aws/"
-    rsync -a "$ROOT_DIR/examples/commands/ssm/" "$ROOT_DIR/commands/ssm/"
+    rsync -a "$ROOT_DIR/examples/commands/aws/" "$_AWST_CONFIG_DIR/commands/aws/"
+    rsync -a "$ROOT_DIR/examples/commands/ssm/" "$_AWST_CONFIG_DIR/commands/ssm/"
   } || {
-    cp -a "$ROOT_DIR/examples/commands/aws/"* "$ROOT_DIR/commands/aws/"
-    cp -a "$ROOT_DIR/examples/commands/ssm/"* "$ROOT_DIR/commands/ssm/"
+    cp -a "$ROOT_DIR/examples/commands/aws/"* "$_AWST_CONFIG_DIR/commands/aws/"
+    cp -a "$ROOT_DIR/examples/commands/ssm/"* "$_AWST_CONFIG_DIR/commands/ssm/"
   }
 fi
 

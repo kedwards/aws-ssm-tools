@@ -64,20 +64,19 @@ else
   echo "[WARN] examples/connections.config not found, default connections may be outdated"
 fi
 
-# Update default commands from examples/commands/
+# Deploy new default commands to user config directory (preserve existing)
+CONFIG_DIR="${HOME}/.config/${REPO_NAME}"
 if [[ -d "${INSTALL_DIR}/examples/commands" ]]; then
-  echo "[INFO] Updating default commands..."
-  mkdir -p "${INSTALL_DIR}/commands/aws" "${INSTALL_DIR}/commands/ssm"
-  rsync -a --delete "${INSTALL_DIR}/examples/commands/aws/" "${INSTALL_DIR}/commands/aws/"
-  rsync -a --delete "${INSTALL_DIR}/examples/commands/ssm/" "${INSTALL_DIR}/commands/ssm/"
+  echo "[INFO] Deploying new default commands..."
+  mkdir -p "${CONFIG_DIR}/commands/aws" "${CONFIG_DIR}/commands/ssm"
+  rsync -a --ignore-existing "${INSTALL_DIR}/examples/commands/aws/" "${CONFIG_DIR}/commands/aws/"
+  rsync -a --ignore-existing "${INSTALL_DIR}/examples/commands/ssm/" "${CONFIG_DIR}/commands/ssm/"
 else
   echo "[WARN] examples/commands not found, default commands may be outdated"
 fi
 
-# User custom configs in ~/.config/aws-tools/ are preserved
-echo "[INFO] Default commands updated in ${INSTALL_DIR}/commands/"
+echo "[INFO] Commands directory: ${CONFIG_DIR}/commands/"
 echo "[INFO] Default connections updated in ${INSTALL_DIR}/connections.config"
-echo "[INFO] User custom commands preserved in ~/.config/${REPO_NAME}/commands/"
 echo "[INFO] User custom connections preserved in ~/.config/${REPO_NAME}/connections.user.config"
 
 # Show new version

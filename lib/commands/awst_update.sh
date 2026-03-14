@@ -105,12 +105,13 @@ awst_update() {
     return 1
   fi
 
-  # Update default commands from examples/commands/
+  # Deploy new default commands to user config directory (preserve existing)
+  local CONFIG_DIR="${HOME}/.config/${REPO_NAME}"
   if [[ -d "${INSTALL_DIR}/examples/commands" ]]; then
-    log_info "Updating default commands..."
-    mkdir -p "${INSTALL_DIR}/commands/aws" "${INSTALL_DIR}/commands/ssm"
-    rsync -a --delete "${INSTALL_DIR}/examples/commands/aws/" "${INSTALL_DIR}/commands/aws/"
-    rsync -a --delete "${INSTALL_DIR}/examples/commands/ssm/" "${INSTALL_DIR}/commands/ssm/"
+    log_info "Deploying new default commands..."
+    mkdir -p "${CONFIG_DIR}/commands/aws" "${CONFIG_DIR}/commands/ssm"
+    rsync -a --ignore-existing "${INSTALL_DIR}/examples/commands/aws/" "${CONFIG_DIR}/commands/aws/"
+    rsync -a --ignore-existing "${INSTALL_DIR}/examples/commands/ssm/" "${CONFIG_DIR}/commands/ssm/"
   else
     log_warn "examples/commands not found, default commands may be outdated"
   fi
@@ -123,10 +124,8 @@ awst_update() {
     log_warn "examples/connections.config not found, default connections may be outdated"
   fi
 
-  # User custom configs in ~/.config/aws-tools/ are preserved
-  log_info "Default commands updated in ${INSTALL_DIR}/commands/"
+  log_info "Commands directory: ${CONFIG_DIR}/commands/"
   log_info "Default connections updated in ${INSTALL_DIR}/connections.config"
-  log_info "User custom commands preserved in ~/.config/${REPO_NAME}/commands.user.config"
   log_info "User custom connections preserved in ~/.config/${REPO_NAME}/connections.user.config"
 
   # Show new version

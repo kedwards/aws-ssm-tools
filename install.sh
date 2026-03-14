@@ -57,12 +57,13 @@ else
   echo "[WARN] examples/connections.config not found, skipping default connections"
 fi
 
-# Deploy default commands from examples/commands/
+# Deploy default commands to user config directory
+CONFIG_DIR="${HOME}/.config/${REPO_NAME}"
 if [[ -d "${INSTALL_DIR}/examples/commands" ]]; then
-  echo "[INFO] Installing default commands..."
-  mkdir -p "${INSTALL_DIR}/commands/aws" "${INSTALL_DIR}/commands/ssm"
-  rsync -a --delete "${INSTALL_DIR}/examples/commands/aws/" "${INSTALL_DIR}/commands/aws/"
-  rsync -a --delete "${INSTALL_DIR}/examples/commands/ssm/" "${INSTALL_DIR}/commands/ssm/"
+  echo "[INFO] Installing default commands to ${CONFIG_DIR}/commands/..."
+  mkdir -p "${CONFIG_DIR}/commands/aws" "${CONFIG_DIR}/commands/ssm"
+  rsync -a "${INSTALL_DIR}/examples/commands/aws/" "${CONFIG_DIR}/commands/aws/"
+  rsync -a "${INSTALL_DIR}/examples/commands/ssm/" "${CONFIG_DIR}/commands/ssm/"
 else
   echo "[WARN] examples/commands not found, skipping default commands"
 fi
@@ -74,11 +75,9 @@ for f in "${INSTALL_DIR}/bin/"*; do
   ln -sf "${f}" "${BIN_DIR}/${cmd}"
 done
 
-# Note: Default configs are in INSTALL_DIR and will be loaded automatically
-# Users can create custom configs in ~/.config/aws-tools/
-echo "[INFO] Default commands available in ${INSTALL_DIR}/commands/"
+# Note: Commands are in ~/.config/aws-tools/commands/ — users manage them there
+echo "[INFO] Commands installed to ${CONFIG_DIR}/commands/"
 echo "[INFO] Default connections available in ${INSTALL_DIR}/connections.config"
-echo "[INFO] Create custom commands in ~/.config/${REPO_NAME}/commands/"
 echo "[INFO] Create custom connections in ~/.config/${REPO_NAME}/connections.user.config"
 
 # Show installed version

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-# Default commands/ssm directories
-_AWST_SSM_CMD_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/ssm"
-_AWST_SSM_CMD_USER_DIR="${HOME}/.config/aws-tools/commands/ssm"
+# Default commands/ssm directory (deployed by install.sh / update.sh from examples/commands/ssm/)
+_AWST_SSM_CMD_DIR="${HOME}/.config/aws-tools/commands/ssm"
 
 # Global arrays to store loaded commands
 COMMAND_NAMES=()
@@ -81,9 +80,8 @@ awst_load_ssm_commands() {
     done
   }
 
-  # Load dirs in order (later dirs override earlier ones)
-  _load_from_dir "$_AWST_SSM_CMD_INSTALL_DIR"
-  _load_from_dir "$_AWST_SSM_CMD_USER_DIR"
+  # Load commands from config directory (and optional custom override)
+  _load_from_dir "$_AWST_SSM_CMD_DIR"
   [[ -n "$custom_dir" && -d "$custom_dir" ]] && _load_from_dir "$custom_dir"
 
   # Return success if any commands were loaded

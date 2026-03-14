@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# Default commands/aws directories
-# Installed defaults (deployed by install.sh / update.sh from examples/commands/aws/)
-_AWST_RUN_INSTALL_DIR="${HOME}/.local/share/aws-tools/commands/aws"
-# User-defined commands (never overwritten by install/update)
-_AWST_RUN_USER_DIR="${HOME}/.config/aws-tools/commands/aws"
+# Default commands/aws directory (deployed by install.sh / update.sh from examples/commands/aws/)
+_AWST_RUN_CMD_DIR="${HOME}/.config/aws-tools/commands/aws"
 
 awst_run_usage() {
   cat <<EOF
@@ -26,8 +23,7 @@ Snippet placeholders:
   #ENV     Replaced with the current profile name
   #REGION  Replaced with the current region
 
-Command directories (in priority order):
-  ~/.local/share/aws-tools/commands/aws
+Commands directory:
   ~/.config/aws-tools/commands/aws
 
 Examples:
@@ -48,9 +44,6 @@ awst_run_list_commands() {
 
   for dir in "${dirs[@]}"; do
     [[ -d "$dir" ]] || continue
-    local is_user=false
-    [[ "$dir" == "$_AWST_RUN_USER_DIR" ]] && is_user=true
-
     for f in "$dir"/*; do
       [[ -f "$f" ]] || continue
       local name
@@ -59,7 +52,6 @@ awst_run_list_commands() {
       desc=$(sed -n '2s/^# *//p' "$f")
       local marks=""
       [[ -x "$f" ]] && marks="*"
-      $is_user && marks="${marks}+"
       cmd_desc["$name"]="$desc"
       cmd_marks["$name"]="$marks"
     done
@@ -84,13 +76,6 @@ awst_run_list_commands() {
   local name
   for name in "${!cmd_marks[@]}"; do
     [[ "${cmd_marks[$name]}" == *"*"* ]] && legend="* = executable script" && break
-  done
-  for name in "${!cmd_marks[@]}"; do
-    if [[ "${cmd_marks[$name]}" == *"+"* ]]; then
-      [[ -n "$legend" ]] && legend="${legend}    "
-      legend="${legend}+ = user-defined"
-      break
-    fi
   done
   [[ -n "$legend" ]] && echo "  $legend" && echo ""
   echo "Run 'awst run --help' for usage examples."
@@ -126,8 +111,8 @@ awst_run() {
   set -- "${positionals[@]+${positionals[@]}}"
 
   # Build the list of command directories to search.
-  # -d flag or AWST_CMD_DIR override: use only that directory (exclusive).
-  # Otherwise: merge installed defaults + user dir (user takes precedence).
+  # -d flag or AWST_CMD_DIR override: use only that directory.
+  # Otherwise: use the default config directory.
   local -a cmd_dirs=()
   if [[ -n "$custom_dir" ]]; then
     if [[ ! -d "$custom_dir" ]]; then
@@ -142,8 +127,7 @@ awst_run() {
     fi
     cmd_dirs=("$AWST_CMD_DIR")
   else
-    [[ -d "$_AWST_RUN_INSTALL_DIR" ]] && cmd_dirs+=("$_AWST_RUN_INSTALL_DIR")
-    [[ -d "$_AWST_RUN_USER_DIR" ]]    && cmd_dirs+=("$_AWST_RUN_USER_DIR")
+    [[ -d "$_AWST_RUN_CMD_DIR" ]] && cmd_dirs+=("$_AWST_RUN_CMD_DIR")
   fi
 
   # Quick query — treat as an inline command (supports optional filter)
@@ -155,7 +139,7 @@ awst_run() {
   if [[ -z "${1:-}" ]]; then
     if [[ ${#cmd_dirs[@]} -eq 0 ]]; then
       log_error "No commands directories found."
-      log_error "Expected: $_AWST_RUN_INSTALL_DIR"
+      log_error "Expected: $_AWST_RUN_CMD_DIR"
       log_error "Set AWST_CMD_DIR or use -d <path>"
       return 1
     fi

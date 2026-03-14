@@ -1,12 +1,11 @@
 #!/usr/bin/env bats
 # shellcheck disable=SC2329,SC2030,SC2031
-# Tests for ssm run multi-source directory layering priority.
+# Tests for awst run command directory resolution and overrides.
 #
-# The layering rules under test:
-#   1. Install dir  (~/.local/share/aws-tools/run-commands) is the shipped default
-#   2. User dir     (~/.config/aws-tools/run-commands) overrides install dir by name
-#   3. -d <path>    is an exclusive override — install and user dirs are ignored
-#   4. AWST_CMD_DIR is an exclusive override — install and user dirs are ignored
+# The directory rules under test:
+#   1. Default dir  (~/.config/aws-tools/commands/aws) is the standard location
+#   2. -d <path>    is an exclusive override — default dir is ignored
+#   3. AWST_CMD_DIR is an exclusive override — default dir is ignored
 
 load '../helpers/bats-support/load'
 load '../helpers/bats-assert/load'
@@ -21,11 +20,11 @@ log_success() { :; }
 setup() {
   TEST_TMPDIR="$(mktemp -d)"
 
-  # Isolate HOME so _AWST_RUN_INSTALL_DIR and _AWST_RUN_USER_DIR resolve to test paths
+  # Isolate HOME so _AWST_RUN_CMD_DIR resolves to test paths
   export HOME="$TEST_TMPDIR/home"
   mkdir -p "$HOME"
 
-  # Ensure env-var override does not interfere with layering tests
+  # Ensure env-var override does not interfere
   unset AWST_CMD_DIR
 
   # Stubs
@@ -34,8 +33,8 @@ setup() {
 
   source ./lib/commands/awst_run.sh
 
-  # Export computed dir paths so subshells spawned by `run` can see them
-  export _AWST_RUN_INSTALL_DIR _AWST_RUN_USER_DIR
+  # Export computed dir path so subshells spawned by `run` can see it
+  export _AWST_RUN_CMD_DIR
 }
 
 teardown() {
@@ -59,10 +58,10 @@ make_script() {
   chmod +x "$dir/$name"
 }
 
-# ── Listing: single source ────────────────────────────────────────────────────
+# ── Listing: default directory ────────────────────────────────────────────────
 
-@test "list: shows commands from install dir when only install dir exists" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "vpc-cidrs" "VPC CIDRs"
+@test "list: shows commands from default dir" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "vpc-cidrs" "VPC CIDRs"
 
   run awst_run
 
@@ -71,30 +70,20 @@ make_script() {
   assert_output --partial "VPC CIDRs"
 }
 
-@test "list: shows commands from user dir when only user dir exists" {
-  make_snippet "$_AWST_RUN_USER_DIR" "my-cmd" "My custom command"
+@test "list: shows multiple commands from default dir" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "cmd-a" "Command A"
+  make_snippet "$_AWST_RUN_CMD_DIR" "cmd-b" "Command B"
 
   run awst_run
 
   assert_success
-  assert_output --partial "my-cmd"
-  assert_output --partial "My custom command"
+  assert_output --partial "cmd-a"
+  assert_output --partial "cmd-b"
 }
 
-@test "list: shows commands from both install and user dirs" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "install-cmd" "Install command"
-  make_snippet "$_AWST_RUN_USER_DIR"    "user-cmd"    "User command"
-
-  run awst_run
-
-  assert_success
-  assert_output --partial "install-cmd"
-  assert_output --partial "user-cmd"
-}
-
-@test "list: commands are sorted alphabetically across both dirs" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "z-last"  "Last command"
-  make_snippet "$_AWST_RUN_USER_DIR"    "a-first"  "First command"
+@test "list: commands are sorted alphabetically" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "z-last"  "Last command"
+  make_snippet "$_AWST_RUN_CMD_DIR" "a-first" "First command"
 
   run awst_run
 
@@ -108,28 +97,18 @@ make_script() {
 
 # ── Listing: markers ─────────────────────────────────────────────────────────
 
-@test "list: install dir commands have no + marker" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "install-cmd" "Install command"
+@test "list: snippet commands have no * marker" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "my-cmd" "My command"
 
   run awst_run
 
   assert_success
-  assert_output --partial "install-cmd"
-  refute_output --partial "+"
+  assert_output --partial "my-cmd"
+  refute_output --partial "*"
 }
 
-@test "list: user dir commands have + marker" {
-  make_snippet "$_AWST_RUN_USER_DIR" "user-cmd" "User command"
-
-  run awst_run
-
-  assert_success
-  assert_output --partial "+"
-  assert_output --partial "+ = user-defined"
-}
-
-@test "list: executable script in install dir shows * marker" {
-  make_script "$_AWST_RUN_INSTALL_DIR" "my-script" "My script"
+@test "list: executable script shows * marker" {
+  make_script "$_AWST_RUN_CMD_DIR" "my-script" "My script"
 
   run awst_run
 
@@ -139,103 +118,32 @@ make_script() {
   assert_output --partial "* = executable script"
 }
 
-@test "list: executable script in user dir shows *+ markers" {
-  make_script "$_AWST_RUN_USER_DIR" "user-script" "User script"
+# ── Execution ─────────────────────────────────────────────────────────────────
 
-  run awst_run
+@test "execute: snippet runs with profile iteration" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "my-cmd" "My command"
+
+  run awst_run my-cmd "dev"
 
   assert_success
-  assert_output --partial "user-script"
-  assert_output --partial "*+"
+  assert_output --partial "OUTPUT:my-cmd"
 }
 
-# ── Listing: same-name priority ───────────────────────────────────────────────
+@test "execute: executable script runs directly without profile iteration" {
+  make_script "$_AWST_RUN_CMD_DIR" "my-script" "My script"
 
-@test "list: user dir command description overrides install dir for same name" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "shared" "Default description"
-  make_snippet "$_AWST_RUN_USER_DIR"    "shared" "User description"
-
-  run awst_run
+  run awst_run my-script
 
   assert_success
-  assert_output --partial "User description"
-  refute_output --partial "Default description"
-}
-
-@test "list: same-name command appears only once (no duplicates)" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "shared" "Default description"
-  make_snippet "$_AWST_RUN_USER_DIR"    "shared" "User description"
-
-  run awst_run
-
-  assert_success
-  local count
-  count=$(echo "$output" | grep -c "shared")
-  [ "$count" -eq 1 ]
-}
-
-@test "list: same-name command shows + marker when user dir wins" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "shared" "Default description"
-  make_snippet "$_AWST_RUN_USER_DIR"    "shared" "User description"
-
-  run awst_run
-
-  assert_success
-  assert_output --partial "+"
-}
-
-# ── Execution: priority ───────────────────────────────────────────────────────
-
-@test "execute: install dir script runs when no user override" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "install-only" "Install only"
-
-  run awst_run install-only "dev"
-
-  assert_success
-  assert_output --partial "OUTPUT:install-only"
-}
-
-@test "execute: user dir script runs when command exists only in user dir" {
-  make_snippet "$_AWST_RUN_USER_DIR" "user-only" "User only"
-
-  run awst_run user-only "dev"
-
-  assert_success
-  assert_output --partial "OUTPUT:user-only"
-}
-
-@test "execute: user dir script takes precedence over install dir for same name" {
-  # Install dir has a snippet that echoes INSTALL_VERSION
-  mkdir -p "$_AWST_RUN_INSTALL_DIR"
-  printf '# cmd\n# Shared\necho "INSTALL_VERSION"\n' > "$_AWST_RUN_INSTALL_DIR/shared"
-
-  # User dir has a snippet that echoes USER_VERSION
-  mkdir -p "$_AWST_RUN_USER_DIR"
-  printf '# cmd\n# Shared\necho "USER_VERSION"\n' > "$_AWST_RUN_USER_DIR/shared"
-
-  run awst_run shared "dev"
-
-  assert_success
-  assert_output --partial "USER_VERSION"
-  refute_output --partial "INSTALL_VERSION"
-}
-
-@test "execute: user dir executable script takes precedence over install dir snippet" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "myscript" "Install snippet"
-  make_script  "$_AWST_RUN_USER_DIR"    "myscript" "User script"
-
-  run awst_run myscript
-
-  assert_success
-  assert_output --partial "OUTPUT:myscript"
+  assert_output --partial "OUTPUT:my-script"
   # Executable ran directly — no profile login
   refute_output --partial "LOGIN:"
 }
 
 # ── Exclusive override: -d flag ───────────────────────────────────────────────
 
-@test "-d uses only the specified dir and ignores install dir" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "install-cmd" "Install command"
+@test "-d uses only the specified dir and ignores default dir" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "default-cmd" "Default command"
   local alt="$TEST_TMPDIR/alt"
   make_snippet "$alt" "alt-cmd" "Alt command"
 
@@ -243,30 +151,7 @@ make_script() {
 
   assert_success
   assert_output --partial "alt-cmd"
-  refute_output --partial "install-cmd"
-}
-
-@test "-d uses only the specified dir and ignores user dir" {
-  make_snippet "$_AWST_RUN_USER_DIR" "user-cmd" "User command"
-  local alt="$TEST_TMPDIR/alt"
-  make_snippet "$alt" "alt-cmd" "Alt command"
-
-  run awst_run -d "$alt"
-
-  assert_success
-  assert_output --partial "alt-cmd"
-  refute_output --partial "user-cmd"
-}
-
-@test "-d commands show no + marker even when script is user-authored" {
-  local alt="$TEST_TMPDIR/alt"
-  make_snippet "$alt" "alt-cmd" "Alt command"
-
-  run awst_run -d "$alt"
-
-  assert_success
-  assert_output --partial "alt-cmd"
-  refute_output --partial "+"
+  refute_output --partial "default-cmd"
 }
 
 @test "-d fails with error when specified dir does not exist" {
@@ -278,8 +163,8 @@ make_script() {
 
 # ── Exclusive override: AWST_CMD_DIR ─────────────────────────────────────
 
-@test "AWST_CMD_DIR uses only that dir and ignores install dir" {
-  make_snippet "$_AWST_RUN_INSTALL_DIR" "install-cmd" "Install command"
+@test "AWST_CMD_DIR uses only that dir and ignores default dir" {
+  make_snippet "$_AWST_RUN_CMD_DIR" "default-cmd" "Default command"
   local override="$TEST_TMPDIR/override"
   make_snippet "$override" "override-cmd" "Override command"
 
@@ -288,31 +173,7 @@ make_script() {
 
   assert_success
   assert_output --partial "override-cmd"
-  refute_output --partial "install-cmd"
-}
-
-@test "AWST_CMD_DIR uses only that dir and ignores user dir" {
-  make_snippet "$_AWST_RUN_USER_DIR" "user-cmd" "User command"
-  local override="$TEST_TMPDIR/override"
-  make_snippet "$override" "override-cmd" "Override command"
-
-  export AWST_CMD_DIR="$override"
-  run awst_run
-
-  assert_success
-  assert_output --partial "override-cmd"
-  refute_output --partial "user-cmd"
-}
-
-@test "AWST_CMD_DIR commands show no + marker" {
-  local override="$TEST_TMPDIR/override"
-  make_snippet "$override" "override-cmd" "Override command"
-
-  export AWST_CMD_DIR="$override"
-  run awst_run
-
-  assert_success
-  refute_output --partial "+"
+  refute_output --partial "default-cmd"
 }
 
 @test "AWST_CMD_DIR fails with error when set to nonexistent dir" {
@@ -326,16 +187,16 @@ make_script() {
 
 # ── Error cases ───────────────────────────────────────────────────────────────
 
-@test "fails with error when neither install dir nor user dir exists" {
-  # HOME is isolated with no dirs created — both default paths are missing
+@test "fails with error when default dir does not exist" {
+  # HOME is isolated with no dirs created — default path is missing
   run awst_run
 
   assert_failure
   assert_output --partial "No commands directories found"
 }
 
-@test "list: shows 'No commands found' when dirs exist but are empty" {
-  mkdir -p "$_AWST_RUN_INSTALL_DIR"
+@test "list: shows 'No commands found' when dir exists but is empty" {
+  mkdir -p "$_AWST_RUN_CMD_DIR"
 
   run awst_run
 
